@@ -9,10 +9,12 @@ export function DepartmentFilter({
   mondayParam,
   departmentId,
   departments,
+  className,
 }: {
   mondayParam: string;
   departmentId: string | null;
   departments: DepartmentFilterOption[];
+  className?: string;
 }) {
   const router = useRouter();
 
@@ -25,9 +27,9 @@ export function DepartmentFilter({
   }
 
   return (
-    <div className="flex max-w-md flex-col gap-2">
-      <label htmlFor="department-filter" className="text-sm font-medium">
-        部署で絞り込み
+    <div className={cn("flex max-w-md flex-col gap-2", className)}>
+      <label htmlFor="department-filter" className="text-muted-foreground text-sm font-medium">
+        部署
       </label>
       <div className="relative">
         <select

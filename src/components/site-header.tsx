@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAppDisplayName } from "@/lib/app-display-name";
+import { SiteHeaderNav } from "@/components/site-header-nav";
 
 export async function SiteHeader() {
   const appName = await getAppDisplayName();
@@ -7,23 +8,13 @@ export async function SiteHeader() {
   return (
     <header className="bg-background border-b">
       <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4 px-4 py-3">
-        <Link href="/" className="text-sm font-semibold tracking-tight">
+        <Link
+          href="/"
+          className="text-primary text-base font-extrabold tracking-tight sm:text-lg"
+        >
           {appName}
         </Link>
-        <nav className="flex items-center gap-4 text-sm">
-          <Link
-            href="/"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            ホーム
-          </Link>
-          <Link
-            href="/admin"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            管理
-          </Link>
-        </nav>
+        <SiteHeaderNav />
       </div>
     </header>
   );

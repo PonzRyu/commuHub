@@ -94,6 +94,27 @@ export function CreateMemberForm({
             </select>
           </div>
           <div className="grid gap-2">
+            <Label htmlFor="member-display-order">表示順（任意）</Label>
+            <select
+              id="member-display-order"
+              name="displayOrder"
+              disabled={pending}
+              defaultValue=""
+              className={cn(
+                "border-input bg-background h-8 w-full rounded-lg border px-2.5 text-sm",
+                "outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                "disabled:cursor-not-allowed disabled:opacity-50",
+              )}
+            >
+              <option value="">未選択（最後）</option>
+              <option value="1">1（最優先）</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </div>
+          <div className="grid gap-2">
             <Label htmlFor="member-ics">カレンダー（.ics・任意）</Label>
             <Input
               id="member-ics"

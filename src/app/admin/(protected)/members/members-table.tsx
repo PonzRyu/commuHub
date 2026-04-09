@@ -54,6 +54,7 @@ export type MemberRow = {
   name: string;
   departmentId: string;
   departmentName: string;
+  displayOrder: number | null;
   hasIcs: boolean;
   icsFileName: string | null;
   icsRegisteredAt: string | null;
@@ -74,6 +75,7 @@ export function MembersTable({
   const [active, setActive] = useState<MemberRow | null>(null);
   const [editName, setEditName] = useState("");
   const [editDeptId, setEditDeptId] = useState("");
+  const [editDisplayOrder, setEditDisplayOrder] = useState<string>("");
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -81,6 +83,7 @@ export function MembersTable({
     setActive(row);
     setEditName(row.name);
     setEditDeptId(row.departmentId);
+    setEditDisplayOrder(row.displayOrder ? String(row.displayOrder) : "");
     setFormError(null);
     setEditOpen(true);
   }
@@ -102,7 +105,21 @@ export function MembersTable({
     if (!active) return;
     setFormError(null);
     startTransition(async () => {
-      const result = await updateMember(active.id, editName, editDeptId);
+      const trimmed = editDisplayOrder.trim();
+      const parsed = trimmed.length === 0 ? null : Number(trimmed);
+      const normalizedOrder =
+        typeof parsed === "number" &&
+        Number.isInteger(parsed) &&
+        parsed >= 1 &&
+        parsed <= 5
+          ? parsed
+          : null;
+      const result = await updateMember(
+        active.id,
+        editName,
+        editDeptId,
+        normalizedOrder,
+      );
       if (!result.ok) {
         setFormError(result.error);
         return;
@@ -176,6 +193,7 @@ export function MembersTable({
             <TableRow>
               <TableHead>メンバー名</TableHead>
               <TableHead>部署</TableHead>
+              <TableHead>表示順</TableHead>
               <TableHead>.ics</TableHead>
               <TableHead className="text-right">操作</TableHead>
             </TableRow>
@@ -183,7 +201,7 @@ export function MembersTable({
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-muted-foreground">
+                <TableCell colSpan={5} className="text-muted-foreground">
                   メンバーがまだありません。上のフォームから登録してください。
                 </TableCell>
               </TableRow>
@@ -192,6 +210,9 @@ export function MembersTable({
                 <TableRow key={row.id}>
                   <TableCell className="font-medium">{row.name}</TableCell>
                   <TableCell>{row.departmentName}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {row.displayOrder ?? "未選択"}
+                  </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {row.hasIcs ? (
                       <div className="flex flex-col gap-0.5">
@@ -276,6 +297,26 @@ export function MembersTable({
                     {d.name}
                   </option>
                 ))}
+              </select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-member-display-order">表示順（任意）</Label>
+              <select
+                id="edit-member-display-order"
+                value={editDisplayOrder}
+                onChange={(e) => setEditDisplayOrder(e.target.value)}
+                disabled={pending}
+                className={cn(
+                  "border-input bg-background h-8 w-full rounded-lg border px-2.5 text-sm",
+                  "outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                )}
+              >
+                <option value="">未選択（最後）</option>
+                <option value="1">1（最優先）</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
               </select>
             </div>
             {formError && editOpen ? (

@@ -11,7 +11,11 @@ export default async function MembersAdminPage() {
   const [departments, members] = await Promise.all([
     prisma.department.findMany({ orderBy: { name: "asc" } }),
     prisma.member.findMany({
-      orderBy: [{ department: { name: "asc" } }, { name: "asc" }],
+      orderBy: [
+        { department: { name: "asc" } },
+        { displayOrder: { sort: "asc", nulls: "last" } },
+        { name: "asc" },
+      ],
       include: { department: true },
     }),
   ]);
@@ -23,6 +27,7 @@ export default async function MembersAdminPage() {
     name: m.name,
     departmentId: m.departmentId,
     departmentName: m.department.name,
+    displayOrder: m.displayOrder ?? null,
     hasIcs: Boolean(m.icsContent),
     icsFileName: m.icsFileName,
     icsRegisteredAt: m.icsRegisteredAt?.toISOString() ?? null,

@@ -12,6 +12,15 @@ function normalizeName(raw: unknown): string {
   return String(raw ?? "").trim();
 }
 
+function parseDisplayOrder(raw: unknown): number | null {
+  const v = String(raw ?? "").trim();
+  if (!v) return null;
+  const n = Number(v);
+  if (!Number.isInteger(n)) return null;
+  if (n < 1 || n > 5) return null;
+  return n;
+}
+
 function isRecord(e: unknown): e is Record<string, unknown> {
   return typeof e === "object" && e !== null;
 }
@@ -69,6 +78,7 @@ export async function createMember(
   await assertAdminSession();
   const name = normalizeName(formData.get("name"));
   const departmentId = String(formData.get("departmentId") ?? "").trim();
+  const displayOrder = parseDisplayOrder(formData.get("displayOrder"));
 
   if (!name) {
     return { error: "メンバー名を入力してください。" };
@@ -91,6 +101,7 @@ export async function createMember(
       data: {
         name,
         departmentId,
+        displayOrder,
         icsContent: ics.content,
         icsFileName: ics.fileName,
         icsRegisteredAt: ics.content ? now : null,
@@ -112,6 +123,7 @@ export async function updateMember(
   id: string,
   name: string,
   departmentId: string,
+  displayOrder: number | null,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   await assertAdminSession();
   const trimmedName = name.trim();
@@ -132,7 +144,7 @@ export async function updateMember(
   try {
     await prisma.member.update({
       where: { id },
-      data: { name: trimmedName, departmentId: dept },
+      data: { name: trimmedName, departmentId: dept, displayOrder },
     });
   } catch (e) {
     const code = getPrismaErrorCode(e);

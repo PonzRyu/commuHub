@@ -36,7 +36,11 @@ export default async function Home({
     prisma.department.findMany({ orderBy: { name: "asc" } }),
     prisma.member.findMany({
       where: departmentId ? { departmentId } : {},
-      orderBy: [{ department: { name: "asc" } }, { name: "asc" }],
+      orderBy: [
+        { department: { name: "asc" } },
+        { displayOrder: { sort: "asc", nulls: "last" } },
+        { name: "asc" },
+      ],
       include: { department: true },
     }),
   ]);
@@ -51,6 +55,7 @@ export default async function Home({
           memberId: m.id,
           name: m.name,
           departmentName: m.department.name,
+          displayOrder: m.displayOrder ?? null,
           hasIcs: false,
           buckets: Array.from({ length: 7 }, () => []),
         };
@@ -60,6 +65,7 @@ export default async function Home({
         memberId: m.id,
         name: m.name,
         departmentName: m.department.name,
+        displayOrder: m.displayOrder ?? null,
         hasIcs: true,
         buckets: bucketByMondayWeekday(occ),
       };

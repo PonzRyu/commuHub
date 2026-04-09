@@ -35,6 +35,8 @@ model Member {
   name         String
   departmentId String
   department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  /// 表示順（1 が最優先）。未設定の場合は最後として扱う。
+  displayOrder Int?
   /// iCalendar 本文（UTF-8 想定）
   icsContent   String?    @db.Text
   icsFileName  String?
