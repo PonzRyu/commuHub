@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CommuHub（コミュハブ）
 
-## Getting Started
+チーム内予定表でメンバーの週間日程を把握するための Web アプリです。要件は `RDD.md` を参照してください。
 
-First, run the development server:
+## 技術スタック（概要）
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **言語**: TypeScript
+- **フロント**: Next.js（App Router）、React
+- **UI**: shadcn/ui（Base UI / Radix 系）、Tailwind CSS
+- **DB**: PostgreSQL（開発は Docker Compose を想定）
+- **ORM / マイグレーション**: Prisma
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ランタイム
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`package.json` の `engines` に合わせて Node.js / npm を揃えてください。`.nvmrc` に推奨の Node バージョンを記載しています。
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 開発の始め方
 
-## Learn More
+1. 依存関係のインストール
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   npm install
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. 環境変数（`.env.example` を複製して `.env` を用意する）
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   PowerShell の例: `Copy-Item .env.example .env`  
+   bash の例: `cp .env.example .env`
 
-## Deploy on Vercel
+3. PostgreSQL の起動（Docker が使える環境）
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   ```bash
+   docker compose up -d
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4. データベースマイグレーション（初回・スキーマ変更時）
+
+   ```bash
+   npm run db:migrate
+   ```
+
+5. 開発サーバー
+
+   ```bash
+   npm run dev
+   ```
+
+ブラウザで [http://localhost:3000](http://localhost:3000) を開きます。本番向けのフロント配信・API 配置の手順は、運用方針が固まり次第この README に追記します（要件 NFR-OPS-01）。
+
+## よく使う npm スクリプト
+
+| スクリプト | 説明 |
+|------------|------|
+| `npm run dev` | 開発サーバー |
+| `npm run build` | 本番ビルド（Prisma Client 生成を含む） |
+| `npm run lint` | ESLint |
+| `npm run db:migrate` | Prisma マイグレーション（開発） |
+| `npm run db:studio` | Prisma Studio |
+
+## ブラウザ対応
+
+要件どおり **Google Chrome** での動作を主眼に置いています。
