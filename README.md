@@ -27,6 +27,8 @@
    PowerShell の例: `Copy-Item .env.example .env`  
    bash の例: `cp .env.example .env`
 
+   **必須**: `ADMIN_PASSWORD`（部署・メンバー管理のログイン用）と `ADMIN_SESSION_SECRET`（Cookie 署名用。十分に長いランダム文字列）を本番相当の値に変更してください（NFR-SEC-01）。
+
 3. PostgreSQL の起動（Docker が使える環境）
 
    ```bash
@@ -45,7 +47,9 @@
    npm run dev
    ```
 
-ブラウザで [http://localhost:3000](http://localhost:3000) を開きます。本番向けのフロント配信・API 配置の手順は、運用方針が固まり次第この README に追記します（要件 NFR-OPS-01）。
+ブラウザで [http://localhost:3000](http://localhost:3000) を開きます。部署の登録・編集は [http://localhost:3000/admin/departments](http://localhost:3000/admin/departments) から管理者パスワードでログインして行います（FR-SEC-* / NFR-SEC-01）。
+
+本番向けのフロント配信・API 配置の手順は、運用方針が固まり次第この README に追記します（要件 NFR-OPS-01）。DB は CI・本番では `npx prisma migrate deploy` でマイグレーションを適用できます（NFR-OPS-02）。
 
 ## よく使う npm スクリプト
 

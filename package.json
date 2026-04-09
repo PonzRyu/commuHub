@@ -12,6 +12,11 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
+    "machine:start": "podman machine start",
+    "db:up": "podman compose up -d",
+    "db:down": "podman compose down",
+    "db:ps": "podman compose ps",
+    "db:logs": "podman compose logs -f db",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio"
