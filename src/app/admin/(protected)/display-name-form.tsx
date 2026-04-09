@@ -34,13 +34,13 @@ export function DisplayNameForm({
       <CardHeader>
         <CardTitle className="text-base">アプリ表示名</CardTitle>
         <CardDescription>
-          ホームやヘッダーのアプリ名を編集できます。
+          ホームやヘッダーに表示されるアプリ名を編集できます。
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form action={formAction} className="grid gap-3">
           <div className="grid gap-2">
-            <Label htmlFor="display-name">接頭辞</Label>
+            <Label htmlFor="display-name">名前</Label>
             <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
               <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <Input

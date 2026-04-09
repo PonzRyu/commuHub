@@ -12,7 +12,7 @@ export {
 const SITE_CONFIG_ID = 1;
 
 /**
- * DB に保存されている接頭辞を正規化（誤って全体が入っていた場合に末尾 CommuHub を除去）
+ * DB に保存されている表示名を正規化（誤って全体が入っていた場合に末尾 CommuHub を除去）
  */
 export function normalizeDisplayNamePrefix(
   raw: string | null | undefined,
@@ -24,7 +24,7 @@ export function normalizeDisplayNamePrefix(
 }
 
 /**
- * ブラウザタイトル・ヘッダー等の製品表示名。常に「{接頭辞} CommuHub」形式。
+ * ブラウザタイトル・ヘッダー等の製品表示名。常に「{表示名} CommuHub」形式。
  */
 export async function getAppDisplayName(): Promise<string> {
   const prefix = await getAppDisplayNamePrefix();
@@ -32,7 +32,7 @@ export async function getAppDisplayName(): Promise<string> {
 }
 
 /**
- * 管理画面で編集する接頭辞（既定: PonzRyu）。
+ * 管理画面で編集する表示名（既定: PonzRyu）。
  */
 export async function getAppDisplayNamePrefix(): Promise<string> {
   try {

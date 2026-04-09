@@ -27,37 +27,40 @@ export default async function AdminHubPage() {
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">管理</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          {appName} — 部署・メンバーの登録と .ics の管理（FR-SEC-* / FR-MEM-*）。
-        </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle className="text-base">部署</CardTitle>
             <CardDescription>部署名の一覧・追加・編集・削除</CardDescription>
           </CardHeader>
-          <div className="px-6 pb-6">
+          <div className="mt-auto px-4">
             <Link
               href="/admin/departments"
-              className={cn(buttonVariants({ variant: "default" }), "inline-flex")}
+              className={cn(
+                buttonVariants({ variant: "default" }),
+                "inline-flex w-full justify-center",
+              )}
             >
               部署の管理へ
             </Link>
           </div>
         </Card>
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle className="text-base">メンバー</CardTitle>
             <CardDescription>
               メンバーとカレンダー（.ics）の登録・更新・削除
             </CardDescription>
           </CardHeader>
-          <div className="px-6 pb-6">
+          <div className="mt-auto px-4">
             <Link
               href="/admin/members"
-              className={cn(buttonVariants({ variant: "default" }), "inline-flex")}
+              className={cn(
+                buttonVariants({ variant: "default" }),
+                "inline-flex w-full justify-center",
+              )}
             >
               メンバーの管理へ
             </Link>

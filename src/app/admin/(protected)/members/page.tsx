@@ -34,9 +34,6 @@ export default async function MembersAdminPage() {
         <h1 className="text-2xl font-semibold tracking-tight">
           メンバーの管理
         </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          メンバーの登録・編集・削除と、.ics の登録・差し替え・削除ができます（FR-MEM-01〜05）。
-        </p>
       </div>
 
       <CreateMemberForm departments={deptOptions} />

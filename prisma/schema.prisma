@@ -14,7 +14,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// アプリ表示名の接頭辞（単一行想定: id = 1）。表示時は常に末尾に " CommuHub" を付与する。
+/// アプリ表示名の表示名（単一行想定: id = 1）。表示時は常に末尾に " CommuHub" を付与する。
 model SiteConfig {
   id          Int    @id @default(1)
   displayName String @default("PonzRyu")

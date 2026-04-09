@@ -25,7 +25,7 @@ export async function updateAppDisplayName(
 
   if (prefix.length > MAX_PREFIX_LEN) {
     return {
-      error: `接頭辞は ${MAX_PREFIX_LEN} 文字以内にしてください（末尾の「 CommuHub」は自動で付きます）。`,
+      error: `表示名は ${MAX_PREFIX_LEN} 文字以内にしてください。`,
       success: false,
     };
   }

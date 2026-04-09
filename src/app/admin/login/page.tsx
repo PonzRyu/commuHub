@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { isAdminSessionValid } from "@/lib/admin-session";
 import { getAppDisplayName } from "@/lib/app-display-name";
-import { LoginForm } from "./login-form";
+import { AdminLoginModal } from "./login-modal";
 
 function safeNextPath(raw: string | undefined): string {
   if (!raw || raw.startsWith("//") || raw.includes("\n")) return "/admin";
@@ -23,5 +23,5 @@ export default async function AdminLoginPage({
 
   const appDisplayName = await getAppDisplayName();
 
-  return <LoginForm nextPath={nextPath} appDisplayName={appDisplayName} />;
+  return <AdminLoginModal nextPath={nextPath} appDisplayName={appDisplayName} />;
 }
