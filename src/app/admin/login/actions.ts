@@ -13,11 +13,13 @@ export async function loginAsAdmin(
   formData: FormData,
 ): Promise<{ error: string | null }> {
   const password = String(formData.get("password") ?? "");
-  const nextPathRaw = String(formData.get("next") ?? "/admin/departments");
+  const nextPathRaw = String(formData.get("next") ?? "/admin");
   const nextPath =
-    nextPathRaw.startsWith("/") && !nextPathRaw.startsWith("//")
+    nextPathRaw.startsWith("/admin") &&
+    !nextPathRaw.startsWith("//") &&
+    nextPathRaw !== "/admin/login"
       ? nextPathRaw
-      : "/admin/departments";
+      : "/admin";
 
   const expected = process.env.ADMIN_PASSWORD;
   if (!expected) {

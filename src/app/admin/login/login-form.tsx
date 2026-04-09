@@ -17,19 +17,26 @@ import { loginAsAdmin } from "./actions";
 
 const initialState = { error: null as string | null };
 
-export function LoginForm({ nextPath }: { nextPath: string }) {
+export function LoginForm({
+  nextPath,
+  appDisplayName,
+}: {
+  nextPath: string;
+  appDisplayName: string;
+}) {
   const [state, formAction, pending] = useActionState(
     loginAsAdmin,
     initialState,
   );
 
   return (
-    <div className="flex min-h-full flex-1 items-center justify-center px-4 py-16">
+    <div className="flex flex-1 flex-col items-center justify-center px-4 py-16">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>管理者ログイン</CardTitle>
           <CardDescription>
-            部署・メンバー管理のためのパスワードを入力してください（NFR-SEC-01）。
+            {appDisplayName}
+            の部署・メンバー管理のためのパスワードを入力してください（NFR-SEC-01）。
           </CardDescription>
         </CardHeader>
         <CardContent>

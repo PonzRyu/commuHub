@@ -14,10 +14,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// アプリ表示名の接頭辞（単一行想定: id = 1）。表示時は常に末尾に " CommuHub" を付与する。
+model SiteConfig {
+  id          Int    @id @default(1)
+  displayName String @default("PonzRyu")
+}
+
 /// 部署（FR-SEC-*）。名称は一意。
 model Department {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  members   Member[]
+}
+
+/// メンバー（FR-MEM-*）。所属部署に紐づく。.ics 本文は DB に保持する。
+model Member {
+  id           String     @id @default(cuid())
+  name         String
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  /// iCalendar 本文（UTF-8 想定）
+  icsContent   String?    @db.Text
+  icsFileName  String?
+  /// .ics を登録・差し替えした日時（削除時は null）
+  icsRegisteredAt DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([departmentId])
 }

@@ -4,7 +4,7 @@ import { CreateDepartmentForm } from "./create-department-form";
 import { DepartmentsTable } from "./departments-table";
 
 export const metadata: Metadata = {
-  title: "部署の管理 | CommuHub",
+  title: "部署の管理",
   description: "部署の参照・登録・更新・削除",
 };
 

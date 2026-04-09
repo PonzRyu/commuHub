@@ -1,6 +1,13 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+
+function safeAdminReturnPath(raw: string | null): string {
+  if (!raw || !raw.startsWith("/admin")) return "/admin";
+  if (raw.startsWith("//")) return "/admin";
+  if (raw === "/admin/login") return "/admin";
+  return raw;
+}
 
 const COOKIE_NAME = "commuhub_admin";
 const COOKIE_MAX_AGE_SEC = 60 * 60 * 24; // 24h
@@ -90,6 +97,8 @@ export async function clearAdminSessionCookie(): Promise<void> {
 
 export async function assertAdminSession(): Promise<void> {
   if (!(await isAdminSessionValid())) {
-    redirect("/admin/login");
+    const h = await headers();
+    const next = safeAdminReturnPath(h.get("x-pathname"));
+    redirect(`/admin/login?next=${encodeURIComponent(next)}`);
   }
 }

@@ -1,6 +1,13 @@
 import { redirect } from "next/navigation";
 import { isAdminSessionValid } from "@/lib/admin-session";
+import { getAppDisplayName } from "@/lib/app-display-name";
 import { LoginForm } from "./login-form";
+
+function safeNextPath(raw: string | undefined): string {
+  if (!raw || raw.startsWith("//") || raw.includes("\n")) return "/admin";
+  if (!raw.startsWith("/admin") || raw === "/admin/login") return "/admin";
+  return raw;
+}
 
 export default async function AdminLoginPage({
   searchParams,
@@ -8,18 +15,13 @@ export default async function AdminLoginPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   if (await isAdminSessionValid()) {
-    redirect("/admin/departments");
+    redirect("/admin");
   }
 
   const sp = await searchParams;
-  const raw = sp.next;
-  const nextPath =
-    raw &&
-    raw.startsWith("/") &&
-    !raw.startsWith("//") &&
-    !raw.includes("\n")
-      ? raw
-      : "/admin/departments";
+  const nextPath = safeNextPath(sp.next);
 
-  return <LoginForm nextPath={nextPath} />;
+  const appDisplayName = await getAppDisplayName();
+
+  return <LoginForm nextPath={nextPath} appDisplayName={appDisplayName} />;
 }

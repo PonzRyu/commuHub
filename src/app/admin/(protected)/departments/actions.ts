@@ -45,6 +45,7 @@ export async function createDepartment(
   }
 
   revalidatePath("/admin/departments");
+  revalidatePath("/admin/members");
   redirect("/admin/departments");
 }
 
@@ -77,6 +78,7 @@ export async function updateDepartment(
   }
 
   revalidatePath("/admin/departments");
+  revalidatePath("/admin/members");
   return { ok: true };
 }
 
@@ -94,9 +96,16 @@ export async function deleteDepartment(
     if (code === "P2025") {
       return { ok: false, error: "対象の部署が見つかりません。" };
     }
+    if (code === "P2003") {
+      return {
+        ok: false,
+        error: "この部署に紐づくメンバーがいるため削除できません。",
+      };
+    }
     throw e;
   }
 
   revalidatePath("/admin/departments");
+  revalidatePath("/admin/members");
   return { ok: true };
 }
