@@ -321,11 +321,11 @@ export function WeeklyScheduleClient({
 
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-4 py-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="m-0 flex min-h-7 items-center text-2xl font-semibold leading-none tracking-tight">
-              週間日程
+              ウィークリースケジュール
             </h1>
             <button
               type="button"

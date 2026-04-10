@@ -20,7 +20,7 @@ export default async function ProtectedAdminLayout({
               href="/"
               className="text-muted-foreground hover:text-foreground text-sm"
             >
-              ホーム
+              ウィークリースケジュール
             </Link>
             <AdminNav />
           </div>

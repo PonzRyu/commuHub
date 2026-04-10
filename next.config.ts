@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
    * Node 上でそのまま require させる。
    */
   serverExternalPackages: ["node-ical", "rrule-temporal", "temporal-polyfill"],
+
+  async redirects() {
+    return [{ source: "/konshu", destination: "/weeklyAgenda", permanent: true }];
+  },
 };
 
 export default nextConfig;

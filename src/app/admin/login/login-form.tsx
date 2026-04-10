@@ -87,7 +87,7 @@ export function LoginForm({
                 "inline-flex w-full justify-center",
               )}
             >
-              ホームへ戻る
+              ウィークリースケジュールへ戻る
             </Link>
           </form>
         </CardContent>
@@ -120,7 +120,7 @@ export function LoginFormInModal({
           "inline-flex w-full justify-center",
         )}
       >
-        ホームへ戻る
+        ウィークリースケジュールへ戻る
       </Link>
     </form>
   );

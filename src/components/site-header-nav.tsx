@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { WEEKLY_AGENDA_PATH } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
 interface SiteHeaderNavLink {
@@ -13,8 +14,13 @@ interface SiteHeaderNavLink {
 const LINKS: SiteHeaderNavLink[] = [
   {
     href: "/",
-    label: "ホーム",
+    label: "ウィークリースケジュール",
     isActive: (pathname) => pathname === "/",
+  },
+  {
+    href: WEEKLY_AGENDA_PATH,
+    label: "ウィークリーアジェンダ",
+    isActive: (pathname) => pathname === WEEKLY_AGENDA_PATH,
   },
   {
     href: "/admin",
