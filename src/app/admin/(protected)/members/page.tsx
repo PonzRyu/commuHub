@@ -5,7 +5,7 @@ import { MembersTable } from "./members-table";
 
 export const metadata: Metadata = {
   title: "メンバーの管理",
-  description: "メンバーの参照・登録・更新・削除と .ics の管理",
+  description: "メンバーの参照・登録・更新・削除と ICS リンクの管理",
 };
 export default async function MembersAdminPage() {
   const [departments, members] = await Promise.all([
@@ -28,8 +28,8 @@ export default async function MembersAdminPage() {
     departmentId: m.departmentId,
     departmentName: m.department.name,
     displayOrder: m.displayOrder ?? null,
-    hasIcs: Boolean(m.icsContent),
-    icsFileName: m.icsFileName,
+    hasIcs: Boolean(m.icsUrl),
+    icsUrl: m.icsUrl,
     icsRegisteredAt: m.icsRegisteredAt?.toISOString() ?? null,
   }));
 

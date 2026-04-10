@@ -14,14 +14,16 @@ import {
   bucketByMondayWeekday,
   expandIcsToWeekOccurrences,
 } from "@/lib/ics/expand-ics-week";
+import { fetchIcsText } from "@/lib/ics/fetch-ics-text";
 import { prisma } from "@/lib/prisma";
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ w?: string; departmentId?: string }>;
+  searchParams: Promise<{ w?: string; departmentId?: string; _r?: string }>;
 }) {
   const sp = await searchParams;
+  const bypassIcsCache = typeof sp._r === "string";
   const mondayParsed = parseWeekQuery(sp.w);
   const mondayYmd = mondayParsed ?? currentMondayTokyo();
   const range = getTokyoWeekRange(mondayYmd);
@@ -49,8 +51,8 @@ export default async function Home({
 
   const rows: WeeklyMemberRow[] = await Promise.all(
     members.map(async (m) => {
-      const ics = m.icsContent;
-      if (!ics) {
+      const icsUrl = m.icsUrl;
+      if (!icsUrl) {
         return {
           memberId: m.id,
           name: m.name,
@@ -60,7 +62,20 @@ export default async function Home({
           buckets: Array.from({ length: 7 }, () => []),
         };
       }
-      const occ = await expandIcsToWeekOccurrences(ics, range);
+      let icsText: string;
+      try {
+        icsText = await fetchIcsText(icsUrl, { bypassCache: bypassIcsCache });
+      } catch {
+        return {
+          memberId: m.id,
+          name: m.name,
+          departmentName: m.department.name,
+          displayOrder: m.displayOrder ?? null,
+          hasIcs: true,
+          buckets: Array.from({ length: 7 }, () => []),
+        };
+      }
+      const occ = await expandIcsToWeekOccurrences(icsText, range);
       return {
         memberId: m.id,
         name: m.name,

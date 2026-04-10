@@ -25,7 +25,7 @@ export function CreateDepartmentForm() {
     <Card>
       <CardHeader>
         <CardTitle className="text-base">部署を追加</CardTitle>
-        <CardDescription>新しい部署名を登録します（FR-SEC-03）。</CardDescription>
+        <CardDescription>部署名を登録します。</CardDescription>
       </CardHeader>
       <CardContent>
         <form action={formAction} className="flex flex-col gap-4 sm:flex-row sm:items-end">

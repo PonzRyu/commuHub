@@ -19,7 +19,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Settings2 } from "lucide-react";
+import { RefreshCw, Settings2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import {
   Table,
@@ -71,43 +72,15 @@ function useSortableRow(id: string) {
   return { ...sortable, style };
 }
 
-function SortableMemberRow({
+function MemberRowDayCells({
   row,
   weekdayCount,
-  dragLabel,
 }: {
   row: WeeklyMemberRow;
   weekdayCount: number;
-  dragLabel: string;
 }) {
-  const { attributes, listeners, setActivatorNodeRef, setNodeRef, isDragging, style } =
-    useSortableRow(row.memberId);
-
   return (
-    <TableRow
-      ref={setNodeRef}
-      style={style}
-      className={cn(isDragging ? "bg-muted/30" : null)}
-    >
-      <TableCell
-        ref={setActivatorNodeRef}
-        className={cn(
-          "bg-card sticky left-0 z-10 align-top font-medium whitespace-normal pl-3",
-          "cursor-grab active:cursor-grabbing select-none",
-          "border-b border-border",
-        )}
-        aria-label={dragLabel}
-        {...attributes}
-        {...listeners}
-      >
-        <div className="flex flex-col gap-0.5">
-          <span>{row.name}</span>
-          <span className="text-muted-foreground text-xs font-normal">
-            {row.departmentName}
-          </span>
-        </div>
-      </TableCell>
-
+    <>
       {row.buckets.slice(0, weekdayCount).map((day, i) => (
         <TableCell
           key={`${row.memberId}-${i}`}
@@ -156,6 +129,74 @@ function SortableMemberRow({
           )}
         </TableCell>
       ))}
+    </>
+  );
+}
+
+function StaticMemberRow({
+  row,
+  weekdayCount,
+}: {
+  row: WeeklyMemberRow;
+  weekdayCount: number;
+}) {
+  return (
+    <TableRow>
+      <TableCell
+        className={cn(
+          "bg-card sticky left-0 z-10 align-top font-medium whitespace-normal pl-3",
+          "border-b border-border",
+        )}
+      >
+        <div className="flex flex-col gap-0.5">
+          <span>{row.name}</span>
+          <span className="text-muted-foreground text-xs font-normal">
+            {row.departmentName}
+          </span>
+        </div>
+      </TableCell>
+      <MemberRowDayCells row={row} weekdayCount={weekdayCount} />
+    </TableRow>
+  );
+}
+
+function SortableMemberRow({
+  row,
+  weekdayCount,
+  dragLabel,
+}: {
+  row: WeeklyMemberRow;
+  weekdayCount: number;
+  dragLabel: string;
+}) {
+  const { attributes, listeners, setActivatorNodeRef, setNodeRef, isDragging, style } =
+    useSortableRow(row.memberId);
+
+  return (
+    <TableRow
+      ref={setNodeRef}
+      style={style}
+      className={cn(isDragging ? "bg-muted/30" : null)}
+    >
+      <TableCell
+        ref={setActivatorNodeRef}
+        className={cn(
+          "bg-card sticky left-0 z-10 align-top font-medium whitespace-normal pl-3",
+          "cursor-grab active:cursor-grabbing select-none",
+          "border-b border-border",
+        )}
+        aria-label={dragLabel}
+        {...attributes}
+        {...listeners}
+      >
+        <div className="flex flex-col gap-0.5">
+          <span>{row.name}</span>
+          <span className="text-muted-foreground text-xs font-normal">
+            {row.departmentName}
+          </span>
+        </div>
+      </TableCell>
+      <MemberRowDayCells row={row} weekdayCount={weekdayCount} />
     </TableRow>
   );
 }
@@ -219,6 +260,12 @@ export function WeeklyScheduleClient({
     });
   }, [orderedRows, hideNoSchedule]);
 
+  /** dnd-kit の SSR 時とクライアント初回で aria-describedby 等の ID がずれハイドレーション不一致になるため、マウント後のみ DnD を有効化する */
+  const [dndMounted, setDndMounted] = React.useState(false);
+  React.useEffect(() => {
+    setDndMounted(true);
+  }, []);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -256,11 +303,46 @@ export function WeeklyScheduleClient({
     ? "予定がない人も表示する"
     : "予定がない人を非表示にする";
 
+  const router = useRouter();
+  const [refreshBusy, setRefreshBusy] = React.useState(false);
+
+  React.useEffect(() => {
+    setRefreshBusy(false);
+  }, [rows, weekRangeLabel]);
+
+  function onRefreshSchedule() {
+    setRefreshBusy(true);
+    const sp = new URLSearchParams();
+    sp.set("w", mondayParam);
+    if (departmentId) sp.set("departmentId", departmentId);
+    sp.set("_r", String(Date.now()));
+    router.replace(`/?${sp.toString()}`);
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-4 py-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">週間日程</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="m-0 flex min-h-7 items-center text-2xl font-semibold leading-none tracking-tight">
+              週間日程
+            </h1>
+            <button
+              type="button"
+              onClick={onRefreshSchedule}
+              disabled={refreshBusy}
+              aria-label="日程を最新の状態に更新"
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "icon-sm" }),
+                "shrink-0 text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
+              )}
+            >
+              <RefreshCw
+                className={cn("size-4", refreshBusy && "animate-spin")}
+                aria-hidden
+              />
+            </button>
+          </div>
           <p className="text-muted-foreground mt-2 text-sm font-medium">
             期間：{weekRangeLabel}
           </p>
@@ -336,69 +418,123 @@ export function WeeklyScheduleClient({
             </Link>
           </div>
 
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={onDragEnd}
-          >
-            <SortableContext
-              items={visibleRows.map((r) => r.memberId)}
-              strategy={verticalListSortingStrategy}
+          {dndMounted ? (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={onDragEnd}
             >
-              <Table className="table-fixed w-full">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="sticky left-0 z-10 w-[7rem] max-w-[7rem] bg-card/90 pl-3">
-                      名前
-                    </TableHead>
-                    {weekdays.map((w, idx) => (
-                      <TableHead
-                        key={w}
-                        className={cn(
-                          idx >= 5 ? WEEKEND_COL_CLASS : WEEKDAY_COL_CLASS,
-                          "text-center",
-                          idx >= 5 ? WEEKEND_CLASS : null,
-                        )}
-                      >
-                        {w}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.length === 0 ? (
+              <SortableContext
+                items={visibleRows.map((r) => r.memberId)}
+                strategy={verticalListSortingStrategy}
+              >
+                <Table className="table-fixed w-full">
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={8} className="py-10 text-center">
-                        <div className="mx-auto flex max-w-md flex-col items-center gap-2">
-                          <p className="text-muted-foreground text-sm">
-                            表示するメンバーがいません。管理画面でメンバーを登録してください。
-                          </p>
-                          <Link
-                            href="/admin/members"
-                            className={cn(
-                              buttonVariants({ variant: "outline", size: "sm" }),
-                              "border-primary text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
-                            )}
-                          >
-                            メンバーを追加
-                          </Link>
-                        </div>
-                      </TableCell>
+                      <TableHead className="sticky left-0 z-10 w-[7rem] max-w-[7rem] bg-card/90 pl-3">
+                        名前
+                      </TableHead>
+                      {weekdays.map((w, idx) => (
+                        <TableHead
+                          key={w}
+                          className={cn(
+                            idx >= 5 ? WEEKEND_COL_CLASS : WEEKDAY_COL_CLASS,
+                            "text-center",
+                            idx >= 5 ? WEEKEND_CLASS : null,
+                          )}
+                        >
+                          {w}
+                        </TableHead>
+                      ))}
                     </TableRow>
-                  ) : (
-                    visibleRows.map((row) => (
-                      <SortableMemberRow
-                        key={row.memberId}
-                        row={row}
-                        weekdayCount={weekdays.length}
-                        dragLabel={`${row.name}の表示順を変更`}
-                      />
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </SortableContext>
-          </DndContext>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="py-10 text-center">
+                          <div className="mx-auto flex max-w-md flex-col items-center gap-2">
+                            <p className="text-muted-foreground text-sm">
+                              表示するメンバーがいません。管理画面でメンバーを登録してください。
+                            </p>
+                            <Link
+                              href="/admin/members"
+                              className={cn(
+                                buttonVariants({ variant: "outline", size: "sm" }),
+                                "border-primary text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
+                              )}
+                            >
+                              メンバーを追加
+                            </Link>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      visibleRows.map((row) => (
+                        <SortableMemberRow
+                          key={row.memberId}
+                          row={row}
+                          weekdayCount={weekdays.length}
+                          dragLabel={`${row.name}の表示順を変更`}
+                        />
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </SortableContext>
+            </DndContext>
+          ) : (
+            <Table className="table-fixed w-full">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="sticky left-0 z-10 w-[7rem] max-w-[7rem] bg-card/90 pl-3">
+                    名前
+                  </TableHead>
+                  {weekdays.map((w, idx) => (
+                    <TableHead
+                      key={w}
+                      className={cn(
+                        idx >= 5 ? WEEKEND_COL_CLASS : WEEKDAY_COL_CLASS,
+                        "text-center",
+                        idx >= 5 ? WEEKEND_CLASS : null,
+                      )}
+                    >
+                      {w}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="py-10 text-center">
+                      <div className="mx-auto flex max-w-md flex-col items-center gap-2">
+                        <p className="text-muted-foreground text-sm">
+                          表示するメンバーがいません。管理画面でメンバーを登録してください。
+                        </p>
+                        <Link
+                          href="/admin/members"
+                          className={cn(
+                            buttonVariants({ variant: "outline", size: "sm" }),
+                            "border-primary text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
+                          )}
+                        >
+                          メンバーを追加
+                        </Link>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  visibleRows.map((row) => (
+                    <StaticMemberRow
+                      key={row.memberId}
+                      row={row}
+                      weekdayCount={weekdays.length}
+                    />
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          )}
         </div>
       </ScheduleTooltipProvider>
     </div>

@@ -33,7 +33,7 @@ export default async function AdminHubPage() {
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle className="text-base">部署</CardTitle>
-            <CardDescription>部署名の一覧・追加・編集・削除</CardDescription>
+            <CardDescription>部署マスターを管理します。</CardDescription>
           </CardHeader>
           <div className="mt-auto px-4">
             <Link
@@ -51,7 +51,7 @@ export default async function AdminHubPage() {
           <CardHeader>
             <CardTitle className="text-base">メンバー</CardTitle>
             <CardDescription>
-              メンバーとカレンダー（.ics）の登録・更新・削除
+              メンバーとカレンダーを管理します。
             </CardDescription>
           </CardHeader>
           <div className="mt-auto px-4">
