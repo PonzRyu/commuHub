@@ -1,23 +1,101 @@
-import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
-import { getAppDisplayName } from "@/lib/app-display-name";
-import { cn } from "@/lib/utils";
+import {
+  WeeklySchedule,
+  type WeeklyMemberRow,
+} from "@/components/weekly-schedule/weekly-schedule";
+import {
+  addCalendarDaysTokyo,
+  currentMondayTokyo,
+  formatWeekRangeLabel,
+  formatYmd,
+  getTokyoWeekRange,
+  parseWeekQuery,
+} from "@/lib/ics/tokyo-week";
+import {
+  bucketByMondayWeekday,
+  expandIcsToWeekOccurrences,
+} from "@/lib/ics/expand-ics-week";
+import { fetchIcsText } from "@/lib/ics/fetch-ics-text";
+import { prisma } from "@/lib/prisma";
 
-export default async function Home() {
-  const appName = await getAppDisplayName();
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ w?: string; departmentId?: string; _r?: string }>;
+}) {
+  const sp = await searchParams;
+  const bypassIcsCache = typeof sp._r === "string";
+  const mondayParsed = parseWeekQuery(sp.w);
+  const mondayYmd = mondayParsed ?? currentMondayTokyo();
+  const range = getTokyoWeekRange(mondayYmd);
+  const mondayParam = formatYmd(mondayYmd);
+  const prevMondayParam = formatYmd(addCalendarDaysTokyo(mondayYmd, -7));
+  const nextMondayParam = formatYmd(addCalendarDaysTokyo(mondayYmd, 7));
+
+  const departmentId =
+    sp.departmentId && sp.departmentId.length > 0 ? sp.departmentId : null;
+
+  const [departments, members] = await Promise.all([
+    prisma.department.findMany({ orderBy: { name: "asc" } }),
+    prisma.member.findMany({
+      where: departmentId ? { departmentId } : {},
+      orderBy: [
+        { department: { name: "asc" } },
+        { displayOrder: { sort: "asc", nulls: "last" } },
+        { name: "asc" },
+      ],
+      include: { department: true },
+    }),
+  ]);
+
+  const deptOptions = departments.map((d) => ({ id: d.id, name: d.name }));
+
+  const rows: WeeklyMemberRow[] = await Promise.all(
+    members.map(async (m) => {
+      const icsUrl = m.icsUrl;
+      if (!icsUrl) {
+        return {
+          memberId: m.id,
+          name: m.name,
+          departmentName: m.department.name,
+          displayOrder: m.displayOrder ?? null,
+          hasIcs: false,
+          buckets: Array.from({ length: 7 }, () => []),
+        };
+      }
+      let icsText: string;
+      try {
+        icsText = await fetchIcsText(icsUrl, { bypassCache: bypassIcsCache });
+      } catch {
+        return {
+          memberId: m.id,
+          name: m.name,
+          departmentName: m.department.name,
+          displayOrder: m.displayOrder ?? null,
+          hasIcs: true,
+          buckets: Array.from({ length: 7 }, () => []),
+        };
+      }
+      const occ = await expandIcsToWeekOccurrences(icsText, range);
+      return {
+        memberId: m.id,
+        name: m.name,
+        departmentName: m.department.name,
+        displayOrder: m.displayOrder ?? null,
+        hasIcs: true,
+        buckets: bucketByMondayWeekday(occ),
+      };
+    }),
+  );
 
   return (
-    <div className="flex min-h-full flex-1 flex-col items-center justify-center gap-6 px-6 py-16">
-      <div className="max-w-lg space-y-3 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">{appName}</h1>
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          上部メニューから「管理」へ進み、管理者パスワードでログインして部署・メンバーを登録できます（FR-SEC-*
-          / FR-MEM-*、NFR-SEC-01）。
-        </p>
-      </div>
-      <Link href="/admin" className={cn(buttonVariants({ variant: "default" }))}>
-        管理へ
-      </Link>
-    </div>
+    <WeeklySchedule
+      weekRangeLabel={formatWeekRangeLabel(mondayYmd)}
+      mondayParam={mondayParam}
+      prevMondayParam={prevMondayParam}
+      nextMondayParam={nextMondayParam}
+      departments={deptOptions}
+      departmentId={departmentId}
+      rows={rows}
+    />
   );
 }

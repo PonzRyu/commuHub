@@ -24,9 +24,6 @@ export default async function DepartmentsAdminPage() {
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">部署の管理</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          登録済み部署の一覧・編集・削除と、新規登録ができます（FR-SEC-01〜03）。
-        </p>
       </div>
 
       <CreateDepartmentForm />

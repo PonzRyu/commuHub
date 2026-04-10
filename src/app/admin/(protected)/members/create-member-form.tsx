@@ -55,7 +55,7 @@ export function CreateMemberForm({
       <CardHeader>
         <CardTitle className="text-base">メンバーを追加</CardTitle>
         <CardDescription>
-          氏名・所属部署を登録し、任意で .ics を添付できます（FR-MEM-03 / FR-MEM-04）。
+          氏名・所属部署を登録し、ICSリンクを登録します。
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -94,16 +94,37 @@ export function CreateMemberForm({
             </select>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="member-ics">カレンダー（.ics・任意）</Label>
+            <Label htmlFor="member-display-order">表示順（任意）</Label>
+            <select
+              id="member-display-order"
+              name="displayOrder"
+              disabled={pending}
+              defaultValue=""
+              className={cn(
+                "border-input bg-background h-8 w-full rounded-lg border px-2.5 text-sm",
+                "outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                "disabled:cursor-not-allowed disabled:opacity-50",
+              )}
+            >
+              <option value="">未選択（最後）</option>
+              <option value="1">1（最優先）</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="member-ics-url">カレンダー（ICS リンク・任意）</Label>
             <Input
-              id="member-ics"
-              name="ics"
-              type="file"
-              accept=".ics,text/calendar"
+              id="member-ics-url"
+              name="icsUrl"
+              type="url"
+              placeholder="例: https://example.com/calendar.ics"
               disabled={pending}
             />
             <p className="text-muted-foreground text-xs">
-              最大 2MB。UTF-8 の iCalendar ファイルを想定しています。
+              公開されたiCalendar(ICS)へのリンクを入力してください。
             </p>
           </div>
           <Button type="submit" className="w-fit" disabled={pending}>

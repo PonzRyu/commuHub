@@ -97,7 +97,7 @@ export function DepartmentsTable({ rows }: { rows: DepartmentRow[] }) {
           <TableHeader>
             <TableRow>
               <TableHead>部署名</TableHead>
-              <TableHead className="text-right">操作</TableHead>
+              <TableHead className="w-[1%] text-left whitespace-nowrap">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -111,8 +111,8 @@ export function DepartmentsTable({ rows }: { rows: DepartmentRow[] }) {
               rows.map((row) => (
                 <TableRow key={row.id}>
                   <TableCell className="font-medium">{row.name}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
+                  <TableCell className="w-[1%] text-right align-middle whitespace-nowrap">
+                    <div className="flex flex-nowrap justify-end gap-2">
                       <Button
                         type="button"
                         variant="outline"
@@ -182,7 +182,7 @@ export function DepartmentsTable({ rows }: { rows: DepartmentRow[] }) {
               {active ? (
                 <>
                   「<span className="font-medium">{active.name}</span>
-                  」を削除します。この操作は取り消せません（FR-SEC-02）。
+                  」を削除します。この操作は取り消せません。
                 </>
               ) : null}
             </AlertDialogDescription>

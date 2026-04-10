@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -38,6 +38,8 @@ import {
 } from "./actions";
 import type { DepartmentOption } from "./create-member-form";
 
+const ICS_URL_DISPLAY_MAX = 20;
+
 function formatJaDateTime(iso: string): string {
   try {
     return new Intl.DateTimeFormat("ja-JP", {
@@ -49,13 +51,19 @@ function formatJaDateTime(iso: string): string {
   }
 }
 
+function truncateIcsUrlForDisplay(url: string): string {
+  if (url.length <= ICS_URL_DISPLAY_MAX) return url;
+  return `${url.slice(0, ICS_URL_DISPLAY_MAX)}...`;
+}
+
 export type MemberRow = {
   id: string;
   name: string;
   departmentId: string;
   departmentName: string;
+  displayOrder: number | null;
   hasIcs: boolean;
-  icsFileName: string | null;
+  icsUrl: string | null;
   icsRegisteredAt: string | null;
 };
 
@@ -67,13 +75,14 @@ export function MembersTable({
   departments: DepartmentOption[];
 }) {
   const router = useRouter();
-  const icsFileRef = useRef<HTMLInputElement>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [icsOpen, setIcsOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [active, setActive] = useState<MemberRow | null>(null);
   const [editName, setEditName] = useState("");
   const [editDeptId, setEditDeptId] = useState("");
+  const [editDisplayOrder, setEditDisplayOrder] = useState<string>("");
+  const [icsUrlInput, setIcsUrlInput] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -81,6 +90,7 @@ export function MembersTable({
     setActive(row);
     setEditName(row.name);
     setEditDeptId(row.departmentId);
+    setEditDisplayOrder(row.displayOrder ? String(row.displayOrder) : "");
     setFormError(null);
     setEditOpen(true);
   }
@@ -88,7 +98,7 @@ export function MembersTable({
   function openIcs(row: MemberRow) {
     setActive(row);
     setFormError(null);
-    if (icsFileRef.current) icsFileRef.current.value = "";
+    setIcsUrlInput(row.icsUrl ?? "");
     setIcsOpen(true);
   }
 
@@ -102,7 +112,21 @@ export function MembersTable({
     if (!active) return;
     setFormError(null);
     startTransition(async () => {
-      const result = await updateMember(active.id, editName, editDeptId);
+      const trimmed = editDisplayOrder.trim();
+      const parsed = trimmed.length === 0 ? null : Number(trimmed);
+      const normalizedOrder =
+        typeof parsed === "number" &&
+        Number.isInteger(parsed) &&
+        parsed >= 1 &&
+        parsed <= 5
+          ? parsed
+          : null;
+      const result = await updateMember(
+        active.id,
+        editName,
+        editDeptId,
+        normalizedOrder,
+      );
       if (!result.ok) {
         setFormError(result.error);
         return;
@@ -115,17 +139,16 @@ export function MembersTable({
 
   function submitIcsUpload() {
     if (!active) return;
-    const input = icsFileRef.current;
-    const file = input?.files?.[0];
-    if (!file) {
-      setFormError(".ics ファイルを選択してください。");
+    const urlText = icsUrlInput.trim();
+    if (!urlText) {
+      setFormError("ICS リンク（URL）を入力してください。");
       return;
     }
     setFormError(null);
     startTransition(async () => {
       const fd = new FormData();
       fd.set("memberId", active.id);
-      fd.set("ics", file);
+      fd.set("icsUrl", urlText);
       const result = await uploadMemberIcs(fd);
       if (!result.ok) {
         setFormError(result.error);
@@ -133,7 +156,7 @@ export function MembersTable({
       }
       setIcsOpen(false);
       setActive(null);
-      if (input) input.value = "";
+      setIcsUrlInput("");
       router.refresh();
     });
   }
@@ -176,14 +199,15 @@ export function MembersTable({
             <TableRow>
               <TableHead>メンバー名</TableHead>
               <TableHead>部署</TableHead>
-              <TableHead>.ics</TableHead>
-              <TableHead className="text-right">操作</TableHead>
+              <TableHead>表示順</TableHead>
+              <TableHead>ICS</TableHead>
+              <TableHead className="w-[1%] text-left whitespace-nowrap">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-muted-foreground">
+                <TableCell colSpan={5} className="text-muted-foreground">
                   メンバーがまだありません。上のフォームから登録してください。
                 </TableCell>
               </TableRow>
@@ -192,15 +216,23 @@ export function MembersTable({
                 <TableRow key={row.id}>
                   <TableCell className="font-medium">{row.name}</TableCell>
                   <TableCell>{row.departmentName}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
+                  <TableCell className="text-muted-foreground">
+                    {row.displayOrder ?? "未選択"}
+                  </TableCell>
+                  <TableCell className="max-w-[min(100%,12rem)] min-w-0 text-muted-foreground text-sm">
                     {row.hasIcs ? (
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-foreground">
-                          {row.icsFileName ?? "登録済み"}
+                      <div className="flex min-w-0 flex-col gap-0.5">
+                        <span
+                          className="text-foreground"
+                          title={row.icsUrl ?? undefined}
+                        >
+                          {row.icsUrl
+                            ? truncateIcsUrlForDisplay(row.icsUrl)
+                            : "登録済み"}
                         </span>
                         {row.icsRegisteredAt ? (
                           <span className="text-xs">
-                            登録: {formatJaDateTime(row.icsRegisteredAt)}
+                            登録日: {formatJaDateTime(row.icsRegisteredAt)}
                           </span>
                         ) : null}
                       </div>
@@ -208,8 +240,8 @@ export function MembersTable({
                       "未登録"
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex flex-wrap justify-end gap-2">
+                  <TableCell className="w-[1%] text-right align-middle whitespace-nowrap">
+                    <div className="flex flex-nowrap justify-end gap-2">
                       <Button
                         type="button"
                         variant="outline"
@@ -278,6 +310,26 @@ export function MembersTable({
                 ))}
               </select>
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-member-display-order">表示順（任意）</Label>
+              <select
+                id="edit-member-display-order"
+                value={editDisplayOrder}
+                onChange={(e) => setEditDisplayOrder(e.target.value)}
+                disabled={pending}
+                className={cn(
+                  "border-input bg-background h-8 w-full rounded-lg border px-2.5 text-sm",
+                  "outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                )}
+              >
+                <option value="">未選択（最後）</option>
+                <option value="1">1（最優先）</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </div>
             {formError && editOpen ? (
               <p className="text-destructive text-sm" role="alert">
                 {formError}
@@ -303,15 +355,20 @@ export function MembersTable({
       <Dialog open={icsOpen} onOpenChange={setIcsOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>カレンダー（.ics）</DialogTitle>
+            <DialogTitle>カレンダー（ICS リンク）</DialogTitle>
           </DialogHeader>
           <div className="grid gap-3 py-2">
             <p className="text-muted-foreground text-sm">
               {active?.hasIcs ? (
                 <>
                   現在:{" "}
-                  <span className="text-foreground font-medium">
-                    {active.icsFileName ?? "登録済み"}
+                  <span
+                    className="text-foreground font-medium"
+                    title={active.icsUrl ?? undefined}
+                  >
+                    {active.icsUrl
+                      ? truncateIcsUrlForDisplay(active.icsUrl)
+                      : "登録済み"}
                   </span>
                   {active.icsRegisteredAt ? (
                     <>
@@ -324,23 +381,18 @@ export function MembersTable({
                   ) : null}
                 </>
               ) : (
-                "まだ .ics が登録されていません（FR-MEM-04）。"
+                "まだICSリンクが登録されていません。"
               )}
             </p>
             <div className="grid gap-2">
-              <Label htmlFor="ics-file">ファイル</Label>
-              <input
-                id="ics-file"
-                ref={icsFileRef}
-                type="file"
-                accept=".ics,text/calendar"
+              <Label htmlFor="ics-url">ICS リンク</Label>
+              <Input
+                id="ics-url"
+                type="url"
+                value={icsUrlInput}
+                onChange={(e) => setIcsUrlInput(e.target.value)}
+                placeholder="例: https://example.com/calendar.ics"
                 disabled={pending}
-                className={cn(
-                  "file:text-foreground h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm transition-colors outline-none",
-                  "file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium",
-                  "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-                  "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30",
-                )}
               />
             </div>
             {formError && icsOpen ? (
@@ -358,7 +410,7 @@ export function MembersTable({
                   disabled={pending}
                   onClick={() => submitDeleteIcs()}
                 >
-                  {pending ? "処理中…" : ".ics を削除"}
+                  {pending ? "処理中…" : "ICSリンクを削除"}
                 </Button>
               ) : null}
             </div>
@@ -376,7 +428,7 @@ export function MembersTable({
                 onClick={() => submitIcsUpload()}
                 disabled={pending}
               >
-                {pending ? "アップロード中…" : "アップロード"}
+                {pending ? "保存中…" : "保存"}
               </Button>
             </div>
           </DialogFooter>
@@ -391,7 +443,7 @@ export function MembersTable({
               {active ? (
                 <>
                   「<span className="font-medium">{active.name}</span>
-                  」を削除します。登録済みの .ics も失われます（FR-MEM-05）。
+                  」を削除します。登録済みの ICS リンクも失われます。
                 </>
               ) : null}
             </AlertDialogDescription>

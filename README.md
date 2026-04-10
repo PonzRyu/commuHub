@@ -29,7 +29,7 @@
 
    **必須**: `ADMIN_PASSWORD`（部署・メンバー管理のログイン用）と `ADMIN_SESSION_SECRET`（Cookie 署名用。十分に長いランダム文字列）を本番相当の値に変更してください（NFR-SEC-01）。
 
-   画面上の製品名は **{接頭辞} CommuHub** の形で、末尾の `CommuHub` は固定です。接頭辞の既定は **PonzRyu**（全体では「PonzRyu CommuHub」）。ログイン後の **管理** 画面（`/admin`）の「アプリ表示名」で接頭辞を変更できます。
+   画面上の製品名は **{表示名} CommuHub** の形で、末尾の `CommuHub` は固定です。表示名の既定は **PonzRyu**（全体では「PonzRyu CommuHub」）。ログイン後の **管理** 画面（`/admin`）の「アプリ表示名」で表示名を変更できます。
 
 3. PostgreSQL の起動（Docker が使える環境）
 

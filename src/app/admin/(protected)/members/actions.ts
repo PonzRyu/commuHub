@@ -6,10 +6,19 @@ import { assertAdminSession } from "@/lib/admin-session";
 import { prisma } from "@/lib/prisma";
 
 const MAX_NAME_LEN = 120;
-const MAX_ICS_BYTES = 2 * 1024 * 1024;
+const MAX_ICS_URL_LEN = 2048;
 
 function normalizeName(raw: unknown): string {
   return String(raw ?? "").trim();
+}
+
+function parseDisplayOrder(raw: unknown): number | null {
+  const v = String(raw ?? "").trim();
+  if (!v) return null;
+  const n = Number(v);
+  if (!Number.isInteger(n)) return null;
+  if (n < 1 || n > 5) return null;
+  return n;
 }
 
 function isRecord(e: unknown): e is Record<string, unknown> {
@@ -21,43 +30,49 @@ function getPrismaErrorCode(e: unknown): string {
   return e.code;
 }
 
-function isValidIcsText(text: string): boolean {
-  return text.toUpperCase().includes("BEGIN:VCALENDAR");
+function normalizeOptionalIcsUrl(raw: unknown): string | null {
+  const t = String(raw ?? "").trim();
+  return t ? t : null;
 }
 
-async function readOptionalIcsFromForm(
-  formData: FormData,
-  fieldName: string,
-): Promise<{ ok: true; content: string | null; fileName: string | null } | { ok: false; error: string }> {
-  const entry = formData.get(fieldName);
-  if (entry === null || entry === undefined) {
-    return { ok: true, content: null, fileName: null };
+function isIpLiteral(hostname: string): boolean {
+  return /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname) || hostname.includes(":");
+}
+
+function isPrivateIpv4(ip: string): boolean {
+  const parts = ip.split(".").map((p) => Number(p));
+  if (parts.length !== 4 || parts.some((n) => !Number.isInteger(n) || n < 0 || n > 255))
+    return true;
+  const [a, b] = parts;
+  if (a === 10) return true;
+  if (a === 127) return true;
+  if (a === 169 && b === 254) return true;
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  return false;
+}
+
+function validateIcsUrl(urlText: string): { ok: true; url: string } | { ok: false; error: string } {
+  if (urlText.length > MAX_ICS_URL_LEN) {
+    return { ok: false, error: `ICS リンクは ${MAX_ICS_URL_LEN} 文字以内にしてください。` };
   }
-  if (typeof entry === "string") {
-    return { ok: true, content: null, fileName: null };
+  let u: URL;
+  try {
+    u = new URL(urlText);
+  } catch {
+    return { ok: false, error: "ICS リンク（URL）の形式が不正です。" };
   }
-  const file = entry as File;
-  if (!file || file.size === 0) {
-    return { ok: true, content: null, fileName: null };
+  if (u.protocol !== "https:" && u.protocol !== "http:") {
+    return { ok: false, error: "ICS リンクは http(s) URL のみ対応しています。" };
   }
-  if (file.size > MAX_ICS_BYTES) {
-    return {
-      ok: false,
-      error: `.ics ファイルは ${MAX_ICS_BYTES / (1024 * 1024)}MB 以下にしてください。`,
-    };
+  const host = u.hostname.toLowerCase();
+  if (host === "localhost" || host === "127.0.0.1" || host === "::1") {
+    return { ok: false, error: "localhost 宛の ICS リンクは登録できません。" };
   }
-  const text = await file.text();
-  if (!isValidIcsText(text)) {
-    return {
-      ok: false,
-      error: "iCalendar（.ics）形式ではないようです。BEGIN:VCALENDAR を含むファイルを選んでください。",
-    };
+  if (isIpLiteral(host) && /^\d{1,3}(\.\d{1,3}){3}$/.test(host) && isPrivateIpv4(host)) {
+    return { ok: false, error: "プライベートIP宛の ICS リンクは登録できません。" };
   }
-  return {
-    ok: true,
-    content: text,
-    fileName: file.name || "calendar.ics",
-  };
+  return { ok: true, url: u.toString() };
 }
 
 export type MemberFormState = { error: string | null };
@@ -69,6 +84,7 @@ export async function createMember(
   await assertAdminSession();
   const name = normalizeName(formData.get("name"));
   const departmentId = String(formData.get("departmentId") ?? "").trim();
+  const displayOrder = parseDisplayOrder(formData.get("displayOrder"));
 
   if (!name) {
     return { error: "メンバー名を入力してください。" };
@@ -80,9 +96,10 @@ export async function createMember(
     return { error: "部署を選択してください。" };
   }
 
-  const ics = await readOptionalIcsFromForm(formData, "ics");
-  if (!ics.ok) {
-    return { error: ics.error };
+  const icsUrlText = normalizeOptionalIcsUrl(formData.get("icsUrl"));
+  if (icsUrlText) {
+    const validated = validateIcsUrl(icsUrlText);
+    if (!validated.ok) return { error: validated.error };
   }
 
   const now = new Date();
@@ -91,9 +108,9 @@ export async function createMember(
       data: {
         name,
         departmentId,
-        icsContent: ics.content,
-        icsFileName: ics.fileName,
-        icsRegisteredAt: ics.content ? now : null,
+        displayOrder,
+        icsUrl: icsUrlText,
+        icsRegisteredAt: icsUrlText ? now : null,
       },
     });
   } catch (e) {
@@ -112,6 +129,7 @@ export async function updateMember(
   id: string,
   name: string,
   departmentId: string,
+  displayOrder: number | null,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   await assertAdminSession();
   const trimmedName = name.trim();
@@ -132,7 +150,7 @@ export async function updateMember(
   try {
     await prisma.member.update({
       where: { id },
-      data: { name: trimmedName, departmentId: dept },
+      data: { name: trimmedName, departmentId: dept, displayOrder },
     });
   } catch (e) {
     const code = getPrismaErrorCode(e);
@@ -176,20 +194,18 @@ export async function uploadMemberIcs(
     return { ok: false, error: "メンバーが不正です。" };
   }
 
-  const ics = await readOptionalIcsFromForm(formData, "ics");
-  if (!ics.ok) {
-    return { ok: false, error: ics.error };
+  const icsUrlText = normalizeOptionalIcsUrl(formData.get("icsUrl"));
+  if (!icsUrlText) {
+    return { ok: false, error: "ICS リンク（URL）を入力してください。" };
   }
-  if (!ics.content) {
-    return { ok: false, error: ".ics ファイルを選択してください。" };
-  }
+  const validated = validateIcsUrl(icsUrlText);
+  if (!validated.ok) return { ok: false, error: validated.error };
 
   try {
     await prisma.member.update({
       where: { id },
       data: {
-        icsContent: ics.content,
-        icsFileName: ics.fileName,
+        icsUrl: validated.url,
         icsRegisteredAt: new Date(),
       },
     });
@@ -213,8 +229,7 @@ export async function deleteMemberIcs(
     await prisma.member.update({
       where: { id },
       data: {
-        icsContent: null,
-        icsFileName: null,
+        icsUrl: null,
         icsRegisteredAt: null,
       },
     });
