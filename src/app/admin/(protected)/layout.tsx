@@ -14,7 +14,7 @@ export default async function ProtectedAdminLayout({
   return (
     <div className="bg-background flex min-h-full flex-1 flex-col">
       <header className="bg-background border-b">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-3">
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4 px-4 py-3">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <Link
               href="/"
@@ -31,7 +31,7 @@ export default async function ProtectedAdminLayout({
           </form>
         </div>
       </header>
-      <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">{children}</div>
+      <div className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-8">{children}</div>
     </div>
   );
 }

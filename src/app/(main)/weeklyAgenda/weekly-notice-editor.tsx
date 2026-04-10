@@ -166,60 +166,66 @@ export function WeeklyNoticeEditor({
         />
       </div>
 
-      <section className="rounded-xl border bg-card p-4 sm:p-6">
-        <h2 className="text-lg font-semibold tracking-tight">今週の共有事項</h2>
-        <p className="text-muted-foreground mt-1 text-sm">
-          チームリーダーや会議の主催者が、その週に共有したい内容を記載します。
-        </p>
-
-        <label htmlFor="weekly-sharing-body" className="sr-only">
-          今週の共有事項
-        </label>
-        <textarea
-          id="weekly-sharing-body"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          rows={6}
-          disabled={busy}
-          placeholder="例：定例会の議題、締切、休暇の共有、来客の案内 など"
-          className="border-input bg-background mt-4 w-full min-h-[6rem] resize-y rounded-lg border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-        />
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Button type="button" size="sm" onClick={onSave} disabled={busy || !isDirty}>
-            保存
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => setDraft(initialContent)}
-            disabled={busy || !isDirty}
-          >
-            編集を取り消す
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="destructive"
-            onClick={() => setClearOpen(true)}
-            disabled={busy || (!initialContent && draft === "")}
-          >
-            クリア
-          </Button>
+      <section className="rounded-xl border bg-card">
+        <div className="border-b px-3 py-2">
+          <h2 className="text-lg font-semibold tracking-tight">今週の共有事項</h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            チームリーダーや会議の主催者が、その週に共有したい内容を記載します。
+          </p>
         </div>
 
-        {error ? (
-          <p className="text-destructive mt-3 text-sm" role="alert">
-            {error}
-          </p>
-        ) : null}
+        <div className="px-3 py-3 sm:px-3.5 sm:py-4">
+          <label htmlFor="weekly-sharing-body" className="sr-only">
+            今週の共有事項
+          </label>
+          <textarea
+            id="weekly-sharing-body"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            rows={6}
+            disabled={busy}
+            placeholder="例：定例会の議題、締切、休暇の共有、来客の案内 など"
+            className="border-input bg-background w-full min-h-[6rem] resize-y rounded-lg border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          />
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button type="button" size="sm" onClick={onSave} disabled={busy || !isDirty}>
+              保存
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setDraft(initialContent)}
+              disabled={busy || !isDirty}
+            >
+              編集を取り消す
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              onClick={() => setClearOpen(true)}
+              disabled={busy || (!initialContent && draft === "")}
+            >
+              クリア
+            </Button>
+          </div>
+
+          {error ? (
+            <p className="text-destructive mt-3 text-sm" role="alert">
+              {error}
+            </p>
+          ) : null}
+        </div>
       </section>
 
-      <section className="rounded-xl border bg-card p-4 sm:p-6">
-        <h2 className="text-lg font-semibold tracking-tight">今週の予定</h2>
-        <p className="text-muted-foreground mt-2 text-sm">
-          全員の予定を表でまとめる機能は、別途仕様を定義してから追加します。
-        </p>
+      <section className="rounded-xl border bg-card">
+        <div className="px-3 py-3 sm:px-3.5 sm:py-4">
+          <h2 className="text-lg font-semibold tracking-tight">今週の予定</h2>
+          <p className="text-muted-foreground mt-2 text-sm">
+            全員の予定を表でまとめる機能は、別途仕様を定義してから追加します。
+          </p>
+        </div>
       </section>
 
       <AlertDialog open={clearOpen} onOpenChange={setClearOpen}>
