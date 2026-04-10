@@ -10,6 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getAppDisplayName, getAppDisplayNamePrefix } from "@/lib/app-display-name";
 import { DisplayNameForm } from "./display-name-form";
+import { PageStack } from "@/components/page-stack";
 
 export async function generateMetadata(): Promise<Metadata> {
   const name = await getAppDisplayName();
@@ -24,7 +25,7 @@ export default async function AdminHubPage() {
   const displayPrefix = await getAppDisplayNamePrefix();
 
   return (
-    <div className="flex flex-col gap-8">
+    <PageStack>
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">管理</h1>
       </div>
@@ -70,6 +71,6 @@ export default async function AdminHubPage() {
 
       <DisplayNameForm initialPrefix={displayPrefix} />
       
-    </div>
+    </PageStack>
   );
 }

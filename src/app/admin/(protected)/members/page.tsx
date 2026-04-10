@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { CreateMemberForm } from "./create-member-form";
 import { MembersTable } from "./members-table";
+import { PageStack } from "@/components/page-stack";
 
 export const metadata: Metadata = {
   title: "メンバーの管理",
@@ -34,7 +35,7 @@ export default async function MembersAdminPage() {
   }));
 
   return (
-    <div className="flex flex-col gap-8">
+    <PageStack>
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">
           メンバーの管理
@@ -47,6 +48,6 @@ export default async function MembersAdminPage() {
         <h2 className="text-sm font-medium">登録済みのメンバー</h2>
         <MembersTable rows={rows} departments={deptOptions} />
       </div>
-    </div>
+    </PageStack>
   );
 }

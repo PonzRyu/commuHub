@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { CreateDepartmentForm } from "./create-department-form";
 import { DepartmentsTable } from "./departments-table";
+import { PageStack } from "@/components/page-stack";
 
 export const metadata: Metadata = {
   title: "部署の管理",
@@ -21,7 +22,7 @@ export default async function DepartmentsAdminPage() {
   }));
 
   return (
-    <div className="flex flex-col gap-8">
+    <PageStack>
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">部署の管理</h1>
       </div>
@@ -32,6 +33,6 @@ export default async function DepartmentsAdminPage() {
         <h2 className="text-sm font-medium">登録済みの部署</h2>
         <DepartmentsTable rows={rows} />
       </div>
-    </div>
+    </PageStack>
   );
 }

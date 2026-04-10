@@ -36,6 +36,8 @@ import { formatWeekdayLabels } from "@/lib/ics/tokyo-week";
 import { ScheduleOccurrenceLine } from "@/components/weekly-schedule/schedule-occurrence-line";
 import { ScheduleTooltipProvider } from "@/components/weekly-schedule/schedule-tooltip-provider";
 import { DepartmentFilter } from "@/components/weekly-schedule/department-filter";
+import { PageContainer } from "@/components/page-container";
+import { PageStack } from "@/components/page-stack";
 import {
   getBaseScheduleColorIndex,
   SCHEDULE_PALETTE_COUNT,
@@ -320,40 +322,41 @@ export function WeeklyScheduleClient({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-4 py-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="m-0 flex min-h-7 items-center text-2xl font-semibold leading-none tracking-tight">
-              ウィークリースケジュール
-            </h1>
-            <button
-              type="button"
-              onClick={onRefreshSchedule}
-              disabled={refreshBusy}
-              aria-label="日程を最新の状態に更新"
-              className={cn(
-                buttonVariants({ variant: "ghost", size: "icon-sm" }),
-                "shrink-0 text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
-              )}
-            >
-              <RefreshCw
-                className={cn("size-4", refreshBusy && "animate-spin")}
-                aria-hidden
-              />
-            </button>
+    <PageContainer>
+      <PageStack>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="m-0 flex min-h-7 items-center text-2xl font-semibold leading-none tracking-tight">
+                ウィークリースケジュール
+              </h1>
+              <button
+                type="button"
+                onClick={onRefreshSchedule}
+                disabled={refreshBusy}
+                aria-label="日程を最新の状態に更新"
+                className={cn(
+                  buttonVariants({ variant: "ghost", size: "icon-sm" }),
+                  "shrink-0 text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
+                )}
+              >
+                <RefreshCw
+                  className={cn("size-4", refreshBusy && "animate-spin")}
+                  aria-hidden
+                />
+              </button>
+            </div>
+            <p className="text-muted-foreground mt-2 text-sm font-medium">
+              期間：{weekRangeLabel}
+            </p>
           </div>
-          <p className="text-muted-foreground mt-2 text-sm font-medium">
-            期間：{weekRangeLabel}
-          </p>
+          <DepartmentFilter
+            mondayParam={mondayParam}
+            departmentId={departmentId}
+            departments={departments}
+            className="w-full sm:w-[18rem]"
+          />
         </div>
-        <DepartmentFilter
-          mondayParam={mondayParam}
-          departmentId={departmentId}
-          departments={departments}
-          className="w-full sm:w-[18rem]"
-        />
-      </div>
 
       <ScheduleTooltipProvider>
         <div className="rounded-xl border bg-card">
@@ -537,7 +540,8 @@ export function WeeklyScheduleClient({
           )}
         </div>
       </ScheduleTooltipProvider>
-    </div>
+      </PageStack>
+    </PageContainer>
   );
 }
 
