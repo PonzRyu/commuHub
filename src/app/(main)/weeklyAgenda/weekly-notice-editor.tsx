@@ -81,6 +81,7 @@ export function WeeklyNoticeEditor({
   const router = useRouter();
   const [draft, setDraft] = React.useState(initialContent);
   const [unifiedClearOpen, setUnifiedClearOpen] = React.useState(false);
+  const [undoEditOpen, setUndoEditOpen] = React.useState(false);
   const [leaveOpen, setLeaveOpen] = React.useState(false);
   const [pendingLeaveHref, setPendingLeaveHref] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
@@ -163,6 +164,7 @@ export function WeeklyNoticeEditor({
       e.preventDefault();
       e.stopPropagation();
       setUnifiedClearOpen(false);
+      setUndoEditOpen(false);
       setPendingLeaveHref(nextUrl.href);
       setLeaveOpen(true);
     }
@@ -210,6 +212,12 @@ export function WeeklyNoticeEditor({
     } else {
       window.location.assign(u.href);
     }
+  }
+
+  function confirmUndoEdit() {
+    setDraft(initialContent);
+    setScheduleDraft(initialSchedule);
+    setUndoEditOpen(false);
   }
 
   async function onUnifiedClearConfirm() {
@@ -355,10 +363,7 @@ export function WeeklyNoticeEditor({
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={() => {
-                  setDraft(initialContent);
-                  setScheduleDraft(initialSchedule);
-                }}
+                onClick={() => setUndoEditOpen(true)}
                 disabled={unifiedBusy || (!isDirty && !isScheduleDirty)}
               >
                 編集を取り消す
@@ -518,6 +523,29 @@ export function WeeklyNoticeEditor({
                 disabled={unifiedBusy}
               >
                 クリアする
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={undoEditOpen} onOpenChange={setUndoEditOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>編集を取り消しますか？</AlertDialogTitle>
+              <AlertDialogDescription>
+                共有事項と予定表の未保存の変更は破棄され、最後に保存された内容が表示されます。
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={unifiedBusy}>キャンセル</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  confirmUndoEdit();
+                }}
+                disabled={unifiedBusy}
+              >
+                取り消す
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
