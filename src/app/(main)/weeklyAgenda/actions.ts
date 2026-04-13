@@ -2,12 +2,20 @@
 
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@/generated/prisma/client";
+import {
+  buildTeamScheduleImportForWeek,
+  type TeamScheduleImportBuilt,
+} from "@/lib/weekly-agenda/build-team-schedule-import";
 import { prisma } from "@/lib/prisma";
 import { WEEKLY_AGENDA_PATH } from "@/lib/routes";
+import {
+  MAX_CONTENT_LEN,
+  MAX_SCHEDULE_ROWS_PER_DAY,
+  type WeeklyAgendaScheduleDataV1,
+  type WeeklyAgendaScheduleRow,
+} from "./weekly-agenda-data";
 
-const MAX_CONTENT_LEN = 32_000;
 const MAX_SCHEDULE_CELL_LEN = 200;
-const MAX_SCHEDULE_ROWS_PER_DAY = 40;
 
 function normalizeWeekMondayYmd(raw: unknown): string | null {
   const s = String(raw ?? "").trim();
@@ -18,17 +26,6 @@ function normalizeWeekMondayYmd(raw: unknown): string | null {
 export interface WeeklyNoticeActionResult {
   ok: boolean;
   error: string | null;
-}
-
-export interface WeeklyAgendaScheduleRow {
-  id: string;
-  time: string;
-  text: string;
-}
-
-export interface WeeklyAgendaScheduleDataV1 {
-  v: 1;
-  days: WeeklyAgendaScheduleRow[][];
 }
 
 function normalizeScheduleData(raw: unknown): WeeklyAgendaScheduleDataV1 {
@@ -168,4 +165,15 @@ export async function clearWeeklyAgendaSchedule(
 
   revalidatePath(WEEKLY_AGENDA_PATH);
   return { ok: true, error: null };
+}
+
+export async function fetchTeamScheduleImport(
+  weekMondayYmd: string,
+): Promise<
+  | { ok: true; data: TeamScheduleImportBuilt }
+  | { ok: false; error: string }
+> {
+  const result = await buildTeamScheduleImportForWeek(weekMondayYmd);
+  if ("error" in result) return { ok: false, error: result.error };
+  return { ok: true, data: result };
 }

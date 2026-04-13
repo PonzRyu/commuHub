@@ -37,11 +37,17 @@ import { WEEKLY_AGENDA_PATH } from "@/lib/routes";
 import {
   clearWeeklyAgendaSchedule,
   clearWeeklyNotice,
+  fetchTeamScheduleImport,
   saveWeeklyAgendaSchedule,
   saveWeeklyNotice,
+} from "./actions";
+import {
+  MAX_CONTENT_LEN,
+  MAX_SCHEDULE_ROWS_PER_DAY,
   type WeeklyAgendaScheduleDataV1,
   type WeeklyAgendaScheduleRow,
-} from "./actions";
+} from "./weekly-agenda-data";
+import type { TeamScheduleTimedRow } from "@/lib/weekly-agenda/build-team-schedule-import";
 import { PageContainer } from "@/components/page-container";
 import { PageStack } from "@/components/page-stack";
 import { Input } from "@/components/ui/input";
@@ -92,6 +98,8 @@ export function WeeklyNoticeEditor({
   );
   const [scheduleBusy, setScheduleBusy] = React.useState(false);
   const [scheduleError, setScheduleError] = React.useState<string | null>(null);
+  const [importBusy, setImportBusy] = React.useState(false);
+  const [importDialogOpen, setImportDialogOpen] = React.useState(false);
 
   /** dnd-kit の SSR/CSR 初回差分を避けるためマウント後のみ有効化 */
   const [scheduleDndMounted, setScheduleDndMounted] = React.useState(false);
@@ -112,7 +120,7 @@ export function WeeklyNoticeEditor({
   const isScheduleDirty =
     JSON.stringify(scheduleDraft) !== JSON.stringify(initialSchedule);
 
-  const unifiedBusy = busy || scheduleBusy;
+  const unifiedBusy = busy || scheduleBusy || importBusy;
   const canUnifiedClear =
     initialContent.trim().length > 0 ||
     draft.trim().length > 0 ||
@@ -253,6 +261,70 @@ export function WeeklyNoticeEditor({
     return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   }
 
+  async function onImportTeamSchedules() {
+    setError(null);
+    setScheduleError(null);
+    setImportBusy(true);
+    try {
+      const r = await fetchTeamScheduleImport(mondayParam);
+      if (!r.ok) {
+        setError(r.error ?? "取り込みに失敗しました。");
+        return;
+      }
+
+      const { sharingLines, timedRows } = r.data;
+      if (sharingLines.length === 0 && timedRows.length === 0) {
+        setError("取り込む予定がありませんでした（ICS が未設定のメンバー、または該当週に予定がありません）。");
+        return;
+      }
+
+      if (sharingLines.length > 0) {
+        const block = sharingLines.join("\n");
+        const nextDraft = draft.trim() ? `${draft.trim()}\n${block}` : block;
+        if (nextDraft.length > MAX_CONTENT_LEN) {
+          setError(
+            `共有事項は ${MAX_CONTENT_LEN} 文字以内です。取り込み後に上限を超えるため中止しました。`,
+          );
+          return;
+        }
+        setDraft(nextDraft);
+      }
+
+      if (timedRows.length > 0) {
+        let scheduleTruncated = false;
+        setScheduleDraft((prev) => {
+          const days = prev.days.map((d) => [...d]) as WeeklyAgendaScheduleRow[][];
+          const byDay: TeamScheduleTimedRow[][] = Array.from({ length: 7 }, () => []);
+          for (const row of timedRows) byDay[row.weekdayIndex].push(row);
+
+          for (let d = 0; d < 7; d++) {
+            const existing = [...(days[d] ?? [])];
+            const room = MAX_SCHEDULE_ROWS_PER_DAY - existing.length;
+            const toAdd = byDay[d];
+            if (room <= 0) {
+              if (toAdd.length > 0) scheduleTruncated = true;
+              continue;
+            }
+            const slice = toAdd.slice(0, room);
+            for (const tr of slice) {
+              existing.push({ id: createRowId(), time: tr.time, text: tr.text });
+            }
+            days[d] = existing;
+            if (toAdd.length > room) scheduleTruncated = true;
+          }
+          return { ...prev, days };
+        });
+        if (scheduleTruncated) {
+          setScheduleError(
+            `予定表は1日あたり最大 ${MAX_SCHEDULE_ROWS_PER_DAY} 行のため、一部の予定のみ取り込みました。`,
+          );
+        }
+      }
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
   const scheduleSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -354,6 +426,15 @@ export function WeeklyNoticeEditor({
               <Button
                 type="button"
                 size="sm"
+                variant="secondary"
+                onClick={() => setImportDialogOpen(true)}
+                disabled={unifiedBusy}
+              >
+                取り込む
+              </Button>
+              <Button
+                type="button"
+                size="sm"
                 onClick={() => void onUnifiedSave()}
                 disabled={unifiedBusy || (!isDirty && !isScheduleDirty)}
               >
@@ -415,11 +496,8 @@ export function WeeklyNoticeEditor({
         <section className="rounded-xl border bg-card">
           <div className="px-3 py-3 sm:px-3.5 sm:py-4">
             <h2 className="text-lg font-semibold tracking-tight">予定表</h2>
-            <p className="text-muted-foreground mt-2 text-sm">
-              曜日ごとに行を追加して予定を記入できます（週ごとに保存されます）。
-            </p>
 
-            <div className="mt-4 rounded-lg border bg-background/40">
+            <div className="mt-4 overflow-x-auto rounded-lg border bg-background/40">
               <DndContext
                 sensors={scheduleSensors}
                 collisionDetection={closestCenter}
@@ -429,8 +507,8 @@ export function WeeklyNoticeEditor({
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[8.5rem]">曜日</TableHead>
-                      <TableHead className="w-[10rem]">時間</TableHead>
-                      <TableHead>内容</TableHead>
+                      <TableHead className="min-w-[11rem] w-[11rem]">時間</TableHead>
+                      <TableHead className="min-w-0">内容</TableHead>
                       <TableHead className="w-[5.5rem] text-right">操作</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -468,13 +546,17 @@ export function WeeklyNoticeEditor({
                               />
                             ))
                           ) : (
-                            <TableRow>
+                            <TableRow
+                              className={dayIndex > 0 ? "border-t-2 border-t-primary" : undefined}
+                            >
                               <TableCell className="align-top">
                                 <span className="inline-block pt-1 text-sm font-semibold tracking-tight">
                                   {d.label}
                                 </span>
                               </TableCell>
-                              <TableCell className="text-muted-foreground align-top">—</TableCell>
+                              <TableCell className="text-muted-foreground align-top min-w-[11rem] w-[11rem]">
+                                —
+                              </TableCell>
                               <TableCell className="text-muted-foreground align-top">—</TableCell>
                               <TableCell className="align-top">
                                 <div className="flex justify-end gap-0.5">
@@ -504,12 +586,50 @@ export function WeeklyNoticeEditor({
           </div>
         </section>
 
+        <AlertDialog
+          open={importDialogOpen}
+          onOpenChange={(open) => {
+            if (!open && importBusy) return;
+            setImportDialogOpen(open);
+          }}
+        >
+          <AlertDialogContent className="max-w-lg sm:max-w-lg">
+            <AlertDialogHeader>
+              <AlertDialogTitle>チーム予定の取り込み</AlertDialogTitle>
+              <AlertDialogDescription className="text-left whitespace-pre-line">
+                {[
+                  "ウィークリースケジュールに連携されている全員の予定を、アジェンダに取り込みます。",
+                  "",
+                  "・同じ開始~終了の時間帯・同じタイトルの予定は、1行にまとめます。",
+                  "・終日の予定は、「期間」とタイトルを共有事項に追記します。",
+                  "・すでに入力がある内容は消さず、その後ろに追記します。",
+                ].join("\n")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={importBusy}>キャンセル</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  void (async () => {
+                    await onImportTeamSchedules();
+                    setImportDialogOpen(false);
+                  })();
+                }}
+                disabled={importBusy}
+              >
+                {importBusy ? "取り込み中…" : "取り込む"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <AlertDialog open={unifiedClearOpen} onOpenChange={setUnifiedClearOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>共有事項と予定表をクリアしますか？</AlertDialogTitle>
               <AlertDialogDescription>
-                この操作は取り消せません。保存済みの共有事項と予定表の両方が削除されます。
+                この操作は取り消せません。保存済みのすべての内容が削除されます。
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -533,7 +653,7 @@ export function WeeklyNoticeEditor({
             <AlertDialogHeader>
               <AlertDialogTitle>編集を取り消しますか？</AlertDialogTitle>
               <AlertDialogDescription>
-                共有事項と予定表の未保存の変更は破棄され、最後に保存された内容が表示されます。
+                変更内容を破棄し、最後に保存した内容に戻します。
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -622,6 +742,7 @@ function ScheduleSortableRow({
       style={style}
       className={cn(
         "border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted",
+        dayIndex > 0 && isFirstRowOfDay && "border-t-2 border-t-primary",
         isDragging ? "bg-muted/30" : null,
       )}
     >
@@ -634,8 +755,8 @@ function ScheduleSortableRow({
           </span>
         )}
       </TableCell>
-      <TableCell className="align-top">
-        <div className="flex items-start gap-2">
+      <TableCell className="align-top min-w-[11rem] w-[11rem]">
+        <div className="flex min-w-0 items-start gap-2">
           <button
             type="button"
             ref={setActivatorNodeRef}
@@ -652,9 +773,10 @@ function ScheduleSortableRow({
             <GripVertical className="size-4" aria-hidden />
           </button>
           <Input
+            className="min-w-0 flex-1 font-tabular-nums"
             value={row.time}
             onChange={(e) => updateScheduleRow(dayIndex, row.id, { time: e.target.value })}
-            placeholder="例: 10:00"
+            placeholder="例: 10:00 ~ 11:00"
             disabled={scheduleBusy}
             aria-label={`${dayLabel}曜日の時間`}
           />

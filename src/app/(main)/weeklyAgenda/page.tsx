@@ -7,7 +7,7 @@ import {
 } from "@/lib/ics/tokyo-week";
 import { prisma } from "@/lib/prisma";
 import { WeeklyNoticeEditor } from "./weekly-notice-editor";
-import type { WeeklyAgendaScheduleDataV1 } from "./actions";
+import type { WeeklyAgendaScheduleDataV1 } from "./weekly-agenda-data";
 
 export default async function WeeklyAgendaPage({
   searchParams,
