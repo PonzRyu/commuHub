@@ -7,6 +7,7 @@ import {
 } from "@/lib/ics/tokyo-week";
 import { prisma } from "@/lib/prisma";
 import { WeeklyNoticeEditor } from "./weekly-notice-editor";
+import type { WeeklyAgendaScheduleDataV1 } from "./actions";
 
 export default async function WeeklyAgendaPage({
   searchParams,
@@ -25,6 +26,17 @@ export default async function WeeklyAgendaPage({
     select: { content: true },
   });
 
+  const scheduleRow = await prisma.weeklyAgendaSchedule.findUnique({
+    where: { weekMondayYmd: mondayParam },
+    select: { data: true },
+  });
+
+  const initialSchedule: WeeklyAgendaScheduleDataV1 =
+    (scheduleRow?.data as WeeklyAgendaScheduleDataV1 | null) ?? {
+      v: 1,
+      days: Array.from({ length: 7 }, () => []),
+    };
+
   return (
     <WeeklyNoticeEditor
       weekRangeLabel={formatWeekRangeLabel(mondayYmd)}
@@ -32,6 +44,7 @@ export default async function WeeklyAgendaPage({
       prevMondayParam={prevMondayParam}
       nextMondayParam={nextMondayParam}
       initialContent={row?.content ?? ""}
+      initialSchedule={initialSchedule}
     />
   );
 }

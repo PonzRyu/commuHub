@@ -19,7 +19,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { RefreshCw, Settings2 } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -36,6 +36,7 @@ import { formatWeekdayLabels } from "@/lib/ics/tokyo-week";
 import { ScheduleOccurrenceLine } from "@/components/weekly-schedule/schedule-occurrence-line";
 import { ScheduleTooltipProvider } from "@/components/weekly-schedule/schedule-tooltip-provider";
 import { DepartmentFilter } from "@/components/weekly-schedule/department-filter";
+import { WeekNavLinks } from "@/components/week-nav-links";
 import { PageContainer } from "@/components/page-container";
 import { PageStack } from "@/components/page-stack";
 import {
@@ -350,11 +351,21 @@ export function WeeklyScheduleClient({
               期間：{weekRangeLabel}
             </p>
           </div>
-          <DepartmentFilter
-            mondayParam={mondayParam}
-            departmentId={departmentId}
-            departments={departments}
-            className="w-full sm:w-[18rem]"
+          <WeekNavLinks
+            currentWeekHref={departmentId ? `/?departmentId=${encodeURIComponent(departmentId)}` : "/"}
+            prevWeekHref={(() => {
+              const sp = new URLSearchParams({ w: prevMondayParam });
+              if (departmentId) sp.set("departmentId", departmentId);
+              const qs = sp.toString();
+              return qs ? `/?${qs}` : "/";
+            })()}
+            nextWeekHref={(() => {
+              const sp = new URLSearchParams({ w: nextMondayParam });
+              if (departmentId) sp.set("departmentId", departmentId);
+              const qs = sp.toString();
+              return qs ? `/?${qs}` : "/";
+            })()}
+            className="w-full justify-end sm:w-[18rem]"
           />
         </div>
 
@@ -383,42 +394,14 @@ export function WeeklyScheduleClient({
                 {hideNoScheduleLabel}
               </button>
             </div>
-
-            <Link
-              href={departmentId ? `/?departmentId=${departmentId}` : "/"}
-              className={cn(buttonVariants({ variant: "default", size: "sm" }))}
-            >
-              <Settings2 className="mr-1 size-4" aria-hidden="true" />
-              今週
-            </Link>
-            <Link
-              href={(() => {
-                const sp = new URLSearchParams({ w: prevMondayParam });
-                if (departmentId) sp.set("departmentId", departmentId);
-                const qs = sp.toString();
-                return qs ? `/?${qs}` : "/";
-              })()}
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "border-primary text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
-              )}
-            >
-              ← 前の週
-            </Link>
-            <Link
-              href={(() => {
-                const sp = new URLSearchParams({ w: nextMondayParam });
-                if (departmentId) sp.set("departmentId", departmentId);
-                const qs = sp.toString();
-                return qs ? `/?${qs}` : "/";
-              })()}
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "border-primary text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
-              )}
-            >
-              次の週 →
-            </Link>
+            <DepartmentFilter
+              mondayParam={mondayParam}
+              departmentId={departmentId}
+              departments={departments}
+              showLabel={false}
+              toolbarStyle
+              className="w-full sm:w-[18rem]"
+            />
           </div>
 
           {dndMounted ? (
