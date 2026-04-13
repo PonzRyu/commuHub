@@ -55,6 +55,12 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
+function scheduleHasAnyCellContent(data: WeeklyAgendaScheduleDataV1): boolean {
+  return data.days.some((day) =>
+    day.some((r) => r.time.trim().length > 0 || r.text.trim().length > 0),
+  );
+}
+
 export interface WeeklyNoticeEditorProps {
   weekRangeLabel: string;
   mondayParam: string;
@@ -74,7 +80,7 @@ export function WeeklyNoticeEditor({
 }: WeeklyNoticeEditorProps) {
   const router = useRouter();
   const [draft, setDraft] = React.useState(initialContent);
-  const [clearOpen, setClearOpen] = React.useState(false);
+  const [unifiedClearOpen, setUnifiedClearOpen] = React.useState(false);
   const [leaveOpen, setLeaveOpen] = React.useState(false);
   const [pendingLeaveHref, setPendingLeaveHref] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
@@ -85,7 +91,6 @@ export function WeeklyNoticeEditor({
   );
   const [scheduleBusy, setScheduleBusy] = React.useState(false);
   const [scheduleError, setScheduleError] = React.useState<string | null>(null);
-  const [scheduleClearOpen, setScheduleClearOpen] = React.useState(false);
 
   /** dnd-kit の SSR/CSR 初回差分を避けるためマウント後のみ有効化 */
   const [scheduleDndMounted, setScheduleDndMounted] = React.useState(false);
@@ -105,6 +110,13 @@ export function WeeklyNoticeEditor({
 
   const isScheduleDirty =
     JSON.stringify(scheduleDraft) !== JSON.stringify(initialSchedule);
+
+  const unifiedBusy = busy || scheduleBusy;
+  const canUnifiedClear =
+    initialContent.trim().length > 0 ||
+    draft.trim().length > 0 ||
+    scheduleHasAnyCellContent(initialSchedule) ||
+    scheduleHasAnyCellContent(scheduleDraft);
 
   React.useEffect(() => {
     if (!isDirty && !isScheduleDirty) return;
@@ -150,8 +162,7 @@ export function WeeklyNoticeEditor({
 
       e.preventDefault();
       e.stopPropagation();
-      setClearOpen(false);
-      setScheduleClearOpen(false);
+      setUnifiedClearOpen(false);
       setPendingLeaveHref(nextUrl.href);
       setLeaveOpen(true);
     }
@@ -159,32 +170,31 @@ export function WeeklyNoticeEditor({
     return () => document.removeEventListener("click", onDocumentClickCapture, true);
   }, [isDirty, isScheduleDirty]);
 
-  async function onSave() {
+  async function onUnifiedSave() {
     setError(null);
+    setScheduleError(null);
+    if (!isDirty && !isScheduleDirty) return;
+
     setBusy(true);
+    setScheduleBusy(true);
     try {
-      const r = await saveWeeklyNotice(mondayParam, draft);
-      if (!r.ok) {
-        setError(r.error ?? "保存に失敗しました。");
-        return;
+      if (isDirty) {
+        const r = await saveWeeklyNotice(mondayParam, draft);
+        if (!r.ok) {
+          setError(r.error ?? "保存に失敗しました。");
+          return;
+        }
+      }
+      if (isScheduleDirty) {
+        const r = await saveWeeklyAgendaSchedule(mondayParam, scheduleDraft);
+        if (!r.ok) {
+          setScheduleError(r.error ?? "保存に失敗しました。");
+          return;
+        }
       }
       router.refresh();
     } finally {
       setBusy(false);
-    }
-  }
-
-  async function onScheduleSave() {
-    setScheduleError(null);
-    setScheduleBusy(true);
-    try {
-      const r = await saveWeeklyAgendaSchedule(mondayParam, scheduleDraft);
-      if (!r.ok) {
-        setScheduleError(r.error ?? "保存に失敗しました。");
-        return;
-      }
-      router.refresh();
-    } finally {
       setScheduleBusy(false);
     }
   }
@@ -202,36 +212,30 @@ export function WeeklyNoticeEditor({
     }
   }
 
-  async function onClearConfirm() {
+  async function onUnifiedClearConfirm() {
     setError(null);
+    setScheduleError(null);
     setBusy(true);
+    setScheduleBusy(true);
     try {
-      const r = await clearWeeklyNotice(mondayParam);
-      if (!r.ok) {
-        setError(r.error ?? "クリアに失敗しました。");
-        return;
+      const [noticeResult, scheduleResult] = await Promise.all([
+        clearWeeklyNotice(mondayParam),
+        clearWeeklyAgendaSchedule(mondayParam),
+      ]);
+      if (!noticeResult.ok) {
+        setError(noticeResult.error ?? "共有事項のクリアに失敗しました。");
       }
+      if (!scheduleResult.ok) {
+        setScheduleError(scheduleResult.error ?? "予定表のクリアに失敗しました。");
+      }
+      if (!noticeResult.ok || !scheduleResult.ok) return;
+
       setDraft("");
-      setClearOpen(false);
+      setScheduleDraft({ v: 1, days: Array.from({ length: 7 }, () => []) });
+      setUnifiedClearOpen(false);
       router.refresh();
     } finally {
       setBusy(false);
-    }
-  }
-
-  async function onScheduleClearConfirm() {
-    setScheduleError(null);
-    setScheduleBusy(true);
-    try {
-      const r = await clearWeeklyAgendaSchedule(mondayParam);
-      if (!r.ok) {
-        setScheduleError(r.error ?? "クリアに失敗しました。");
-        return;
-      }
-      setScheduleDraft({ v: 1, days: Array.from({ length: 7 }, () => []) });
-      setScheduleClearOpen(false);
-      router.refresh();
-    } finally {
       setScheduleBusy(false);
     }
   }
@@ -322,7 +326,7 @@ export function WeeklyNoticeEditor({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="m-0 flex min-h-7 items-center text-2xl font-semibold leading-none tracking-tight">
+              <h1 className="m-0 flex min-h-7 shrink-0 items-center text-2xl font-semibold leading-none tracking-tight whitespace-nowrap">
                 ウィークリーアジェンダ
               </h1>
               <span className="size-7 shrink-0" aria-hidden />
@@ -331,12 +335,55 @@ export function WeeklyNoticeEditor({
               期間：{weekRangeLabel}
             </p>
           </div>
-          <WeekNavLinks
-            currentWeekHref={WEEKLY_AGENDA_PATH}
-            prevWeekHref={`${WEEKLY_AGENDA_PATH}?w=${encodeURIComponent(prevMondayParam)}`}
-            nextWeekHref={`${WEEKLY_AGENDA_PATH}?w=${encodeURIComponent(nextMondayParam)}`}
-            className="w-full justify-end sm:w-[18rem]"
-          />
+          <div className="flex w-full flex-col items-stretch gap-2 sm:max-w-none sm:items-end">
+            <WeekNavLinks
+              currentWeekHref={WEEKLY_AGENDA_PATH}
+              prevWeekHref={`${WEEKLY_AGENDA_PATH}?w=${encodeURIComponent(prevMondayParam)}`}
+              nextWeekHref={`${WEEKLY_AGENDA_PATH}?w=${encodeURIComponent(nextMondayParam)}`}
+              className="w-full justify-end sm:w-[18rem]"
+            />
+            <div className="flex w-full flex-wrap justify-end gap-2">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => void onUnifiedSave()}
+                disabled={unifiedBusy || (!isDirty && !isScheduleDirty)}
+              >
+                保存
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setDraft(initialContent);
+                  setScheduleDraft(initialSchedule);
+                }}
+                disabled={unifiedBusy || (!isDirty && !isScheduleDirty)}
+              >
+                編集を取り消す
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="destructive"
+                onClick={() => setUnifiedClearOpen(true)}
+                disabled={unifiedBusy || !canUnifiedClear}
+              >
+                クリア
+              </Button>
+            </div>
+            {error ? (
+              <p className="text-destructive max-w-md text-right text-sm" role="alert">
+                {error}
+              </p>
+            ) : null}
+            {scheduleError ? (
+              <p className="text-destructive max-w-md text-right text-sm" role="alert">
+                {scheduleError}
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <section className="rounded-xl border bg-card">
@@ -353,39 +400,10 @@ export function WeeklyNoticeEditor({
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               rows={6}
-              disabled={busy}
+              disabled={unifiedBusy}
               placeholder="例：定例会の議題、締切、休暇の共有、来客の案内 など"
               className="border-input bg-background w-full min-h-[6rem] resize-y rounded-lg border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Button type="button" size="sm" onClick={onSave} disabled={busy || !isDirty}>
-                保存
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => setDraft(initialContent)}
-                disabled={busy || !isDirty}
-              >
-                編集を取り消す
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="destructive"
-                onClick={() => setClearOpen(true)}
-                disabled={busy || (!initialContent && draft === "")}
-              >
-                クリア
-              </Button>
-            </div>
-
-            {error ? (
-              <p className="text-destructive mt-3 text-sm" role="alert">
-                {error}
-              </p>
-            ) : null}
           </div>
         </section>
 
@@ -437,7 +455,7 @@ export function WeeklyNoticeEditor({
                                 dayLabel={d.label}
                                 dayIndex={dayIndex}
                                 isFirstRowOfDay={rowIndex === 0}
-                                scheduleBusy={scheduleBusy}
+                                scheduleBusy={unifiedBusy}
                                 scheduleDndMounted={scheduleDndMounted}
                                 updateScheduleRow={updateScheduleRow}
                                 removeScheduleRow={removeScheduleRow}
@@ -461,7 +479,7 @@ export function WeeklyNoticeEditor({
                                     variant="ghost"
                                     className="bg-transparent text-primary hover:bg-transparent hover:text-primary/90 active:bg-transparent dark:hover:bg-transparent"
                                     onClick={() => addScheduleRowAfter(dayIndex)}
-                                    disabled={scheduleBusy}
+                                    disabled={unifiedBusy}
                                     aria-label={`${d.label}曜日に行を追加`}
                                     title="この曜日に行を追加"
                                   >
@@ -478,85 +496,26 @@ export function WeeklyNoticeEditor({
                 </Table>
               </DndContext>
             </div>
-
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => void onScheduleSave()}
-                disabled={scheduleBusy || !isScheduleDirty}
-              >
-                保存
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => setScheduleDraft(initialSchedule)}
-                disabled={scheduleBusy || !isScheduleDirty}
-              >
-                編集を取り消す
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="destructive"
-                onClick={() => setScheduleClearOpen(true)}
-                disabled={scheduleBusy}
-              >
-                クリア
-              </Button>
-            </div>
-
-            {scheduleError ? (
-              <p className="text-destructive mt-3 text-sm" role="alert">
-                {scheduleError}
-              </p>
-            ) : null}
           </div>
         </section>
 
-        <AlertDialog open={clearOpen} onOpenChange={setClearOpen}>
+        <AlertDialog open={unifiedClearOpen} onOpenChange={setUnifiedClearOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>共有事項をクリアしますか？</AlertDialogTitle>
+              <AlertDialogTitle>共有事項と予定表をクリアしますか？</AlertDialogTitle>
               <AlertDialogDescription>
-                この操作は取り消せません。保存済みの共有内容が削除されます。
+                この操作は取り消せません。保存済みの共有事項と予定表の両方が削除されます。
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={busy}>キャンセル</AlertDialogCancel>
+              <AlertDialogCancel disabled={unifiedBusy}>キャンセル</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 onClick={(e) => {
                   e.preventDefault();
-                  void onClearConfirm();
+                  void onUnifiedClearConfirm();
                 }}
-                disabled={busy}
-              >
-                クリアする
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        <AlertDialog open={scheduleClearOpen} onOpenChange={setScheduleClearOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>予定表をクリアしますか？</AlertDialogTitle>
-              <AlertDialogDescription>
-                この操作は取り消せません。保存済みの予定表が削除されます。
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={scheduleBusy}>キャンセル</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={(e) => {
-                  e.preventDefault();
-                  void onScheduleClearConfirm();
-                }}
-                disabled={scheduleBusy}
+                disabled={unifiedBusy}
               >
                 クリアする
               </AlertDialogAction>

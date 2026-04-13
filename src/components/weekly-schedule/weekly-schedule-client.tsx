@@ -376,20 +376,14 @@ export function WeeklyScheduleClient({
               <button
                 type="button"
                 onClick={onClickDepartmentSort}
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "sm" }),
-                  "border-primary text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
-                )}
+                className={buttonVariants({ variant: "outline", size: "sm" })}
               >
                 {sortButtonLabel}
               </button>
               <button
                 type="button"
                 onClick={() => setHideNoSchedule((v) => !v)}
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "sm" }),
-                  "border-primary text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
-                )}
+                className={buttonVariants({ variant: "outline", size: "sm" })}
               >
                 {hideNoScheduleLabel}
               </button>
@@ -444,10 +438,7 @@ export function WeeklyScheduleClient({
                             </p>
                             <Link
                               href="/admin/members"
-                              className={cn(
-                                buttonVariants({ variant: "outline", size: "sm" }),
-                                "border-primary text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
-                              )}
+                              className={buttonVariants({ variant: "outline", size: "sm" })}
                             >
                               メンバーを追加
                             </Link>
@@ -499,10 +490,7 @@ export function WeeklyScheduleClient({
                         </p>
                         <Link
                           href="/admin/members"
-                          className={cn(
-                            buttonVariants({ variant: "outline", size: "sm" }),
-                            "border-primary text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
-                          )}
+                          className={buttonVariants({ variant: "outline", size: "sm" })}
                         >
                           メンバーを追加
                         </Link>

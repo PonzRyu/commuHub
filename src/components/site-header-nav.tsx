@@ -33,7 +33,7 @@ export function SiteHeaderNav() {
   const pathname = usePathname() ?? "/";
 
   return (
-    <nav className="flex items-center gap-4 text-sm">
+    <nav className="flex max-w-full min-w-0 items-center gap-2 overflow-x-auto text-sm sm:gap-4">
       {LINKS.map((link) => {
         const isActive = link.isActive(pathname);
         return (
@@ -42,7 +42,7 @@ export function SiteHeaderNav() {
             href={link.href}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "rounded-md px-2 py-1 transition-colors",
+              "whitespace-nowrap rounded-md px-2 py-1 transition-colors",
               isActive
                 ? "text-primary font-semibold"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/60",

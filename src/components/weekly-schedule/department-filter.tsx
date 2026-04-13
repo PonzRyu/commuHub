@@ -52,8 +52,7 @@ export function DepartmentFilter({
               ? cn(
                   buttonVariants({ variant: "outline", size: "sm" }),
                   "w-full appearance-none pl-2.5 pr-8 text-left",
-                  "border-primary text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
-                  "focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:border-ring",
+                  "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
                 )
               : cn(
                   "border-input bg-background h-9 w-full rounded-lg border pl-3 pr-10 text-sm",
@@ -69,10 +68,7 @@ export function DepartmentFilter({
           ))}
         </select>
         <ChevronDown
-          className={cn(
-            "pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2",
-            toolbarStyle ? "text-primary" : "text-muted-foreground",
-          )}
+          className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden="true"
         />
       </div>

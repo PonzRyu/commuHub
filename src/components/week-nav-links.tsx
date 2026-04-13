@@ -32,19 +32,13 @@ export function WeekNavLinks({
       </Link>
       <Link
         href={prevWeekHref}
-        className={cn(
-          buttonVariants({ variant: "outline", size: "sm" }),
-          "border-primary text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
-        )}
+        className={buttonVariants({ variant: "outline", size: "sm" })}
       >
         ← 前の週
       </Link>
       <Link
         href={nextWeekHref}
-        className={cn(
-          buttonVariants({ variant: "outline", size: "sm" }),
-          "border-primary text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
-        )}
+        className={buttonVariants({ variant: "outline", size: "sm" })}
       >
         次の週 →
       </Link>

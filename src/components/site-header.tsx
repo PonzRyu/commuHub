@@ -7,7 +7,7 @@ export async function SiteHeader() {
 
   return (
     <header className="bg-background border-b">
-      <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4 px-4 py-3">
+      <div className="mx-auto flex min-w-0 max-w-[1200px] items-center justify-between gap-4 px-4 py-3">
         <Link
           href="/"
           className="text-primary text-base font-extrabold tracking-tight sm:text-lg"
