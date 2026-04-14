@@ -78,7 +78,9 @@ export async function setAdminSessionCookie(): Promise<void> {
   jar.set(COOKIE_NAME, createAdminSessionCookieValue(), {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure:
+      process.env.NODE_ENV === "production" &&
+      process.env.COMMUHUB_ELECTRON !== "1",
     maxAge: COOKIE_MAX_AGE_SEC,
     path: "/",
   });
@@ -89,7 +91,9 @@ export async function clearAdminSessionCookie(): Promise<void> {
   jar.set(COOKIE_NAME, "", {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure:
+      process.env.NODE_ENV === "production" &&
+      process.env.COMMUHUB_ELECTRON !== "1",
     maxAge: 0,
     path: "/",
   });
