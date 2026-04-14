@@ -68,7 +68,7 @@ jobs:
         run: npm run deploy:copy-standalone-assets
 
       - name: Sync standalone output to IIS site folder
-        shell: pwsh
+        shell: powershell
         env:
           DEPLOY_TARGET_PATH: ${{ vars.DEPLOY_TARGET_PATH }}
         run: |
@@ -84,7 +84,7 @@ jobs:
           if ($LASTEXITCODE -ge 8) { throw "robocopy failed with exit code $LASTEXITCODE" }
 
       - name: Write production .env on deploy target
-        shell: pwsh
+        shell: powershell
         env:
           DEPLOY_TARGET_PATH: ${{ vars.DEPLOY_TARGET_PATH }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -103,7 +103,7 @@ jobs:
 
       - name: Recycle IIS app pool (optional)
         if: ${{ vars.IIS_APP_POOL_NAME != '' }}
-        shell: pwsh
+        shell: powershell
         env:
           IIS_APP_POOL_NAME: ${{ vars.IIS_APP_POOL_NAME }}
         run: |
