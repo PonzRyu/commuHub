@@ -46,3 +46,25 @@ model Member {
 
   @@index([departmentId])
 }
+
+/// 週次の周知文（東京・月曜始まりの週ごとに 1 件）
+model WeeklyNotice {
+  id            String   @id @default(cuid())
+  /// その週の月曜日（東京暦 YYYY-MM-DD）
+  weekMondayYmd String   @unique
+  content       String   @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+/// 週次の予定表（東京・月曜始まりの週ごとに 1 件）
+/// - 「曜日ごとの表（行の追加/削除/編集）」を JSON として保存する
+model WeeklyAgendaSchedule {
+  id            String   @id @default(cuid())
+  /// その週の月曜日（東京暦 YYYY-MM-DD）
+  weekMondayYmd String   @unique
+  /// 予定表データ（曜日→行配列）
+  data          Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

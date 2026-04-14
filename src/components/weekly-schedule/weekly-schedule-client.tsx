@@ -19,7 +19,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { RefreshCw, Settings2 } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -36,6 +36,9 @@ import { formatWeekdayLabels } from "@/lib/ics/tokyo-week";
 import { ScheduleOccurrenceLine } from "@/components/weekly-schedule/schedule-occurrence-line";
 import { ScheduleTooltipProvider } from "@/components/weekly-schedule/schedule-tooltip-provider";
 import { DepartmentFilter } from "@/components/weekly-schedule/department-filter";
+import { WeekNavLinks } from "@/components/week-nav-links";
+import { PageContainer } from "@/components/page-container";
+import { PageStack } from "@/components/page-stack";
 import {
   getBaseScheduleColorIndex,
   SCHEDULE_PALETTE_COUNT,
@@ -320,40 +323,51 @@ export function WeeklyScheduleClient({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-4 py-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="m-0 flex min-h-7 items-center text-2xl font-semibold leading-none tracking-tight">
-              週間日程
-            </h1>
-            <button
-              type="button"
-              onClick={onRefreshSchedule}
-              disabled={refreshBusy}
-              aria-label="日程を最新の状態に更新"
-              className={cn(
-                buttonVariants({ variant: "ghost", size: "icon-sm" }),
-                "shrink-0 text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
-              )}
-            >
-              <RefreshCw
-                className={cn("size-4", refreshBusy && "animate-spin")}
-                aria-hidden
-              />
-            </button>
+    <PageContainer>
+      <PageStack>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="m-0 flex min-h-7 items-center text-2xl font-semibold leading-none tracking-tight">
+                ウィークリースケジュール
+              </h1>
+              <button
+                type="button"
+                onClick={onRefreshSchedule}
+                disabled={refreshBusy}
+                aria-label="日程を最新の状態に更新"
+                className={cn(
+                  buttonVariants({ variant: "ghost", size: "icon-sm" }),
+                  "shrink-0 text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
+                )}
+              >
+                <RefreshCw
+                  className={cn("size-4", refreshBusy && "animate-spin")}
+                  aria-hidden
+                />
+              </button>
+            </div>
+            <p className="text-muted-foreground mt-2 text-sm font-medium">
+              期間：{weekRangeLabel}
+            </p>
           </div>
-          <p className="text-muted-foreground mt-2 text-sm font-medium">
-            期間：{weekRangeLabel}
-          </p>
+          <WeekNavLinks
+            currentWeekHref={departmentId ? `/?departmentId=${encodeURIComponent(departmentId)}` : "/"}
+            prevWeekHref={(() => {
+              const sp = new URLSearchParams({ w: prevMondayParam });
+              if (departmentId) sp.set("departmentId", departmentId);
+              const qs = sp.toString();
+              return qs ? `/?${qs}` : "/";
+            })()}
+            nextWeekHref={(() => {
+              const sp = new URLSearchParams({ w: nextMondayParam });
+              if (departmentId) sp.set("departmentId", departmentId);
+              const qs = sp.toString();
+              return qs ? `/?${qs}` : "/";
+            })()}
+            className="w-full justify-end sm:w-[18rem]"
+          />
         </div>
-        <DepartmentFilter
-          mondayParam={mondayParam}
-          departmentId={departmentId}
-          departments={departments}
-          className="w-full sm:w-[18rem]"
-        />
-      </div>
 
       <ScheduleTooltipProvider>
         <div className="rounded-xl border bg-card">
@@ -362,60 +376,26 @@ export function WeeklyScheduleClient({
               <button
                 type="button"
                 onClick={onClickDepartmentSort}
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "sm" }),
-                  "border-primary text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
-                )}
+                className={buttonVariants({ variant: "outline", size: "sm" })}
               >
                 {sortButtonLabel}
               </button>
               <button
                 type="button"
                 onClick={() => setHideNoSchedule((v) => !v)}
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "sm" }),
-                  "border-primary text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
-                )}
+                className={buttonVariants({ variant: "outline", size: "sm" })}
               >
                 {hideNoScheduleLabel}
               </button>
             </div>
-
-            <Link
-              href={departmentId ? `/?departmentId=${departmentId}` : "/"}
-              className={cn(buttonVariants({ variant: "default", size: "sm" }))}
-            >
-              <Settings2 className="mr-1 size-4" aria-hidden="true" />
-              今週
-            </Link>
-            <Link
-              href={(() => {
-                const sp = new URLSearchParams({ w: prevMondayParam });
-                if (departmentId) sp.set("departmentId", departmentId);
-                const qs = sp.toString();
-                return qs ? `/?${qs}` : "/";
-              })()}
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "border-primary text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
-              )}
-            >
-              ← 前の週
-            </Link>
-            <Link
-              href={(() => {
-                const sp = new URLSearchParams({ w: nextMondayParam });
-                if (departmentId) sp.set("departmentId", departmentId);
-                const qs = sp.toString();
-                return qs ? `/?${qs}` : "/";
-              })()}
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "border-primary text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
-              )}
-            >
-              次の週 →
-            </Link>
+            <DepartmentFilter
+              mondayParam={mondayParam}
+              departmentId={departmentId}
+              departments={departments}
+              showLabel={false}
+              toolbarStyle
+              className="w-full sm:w-[18rem]"
+            />
           </div>
 
           {dndMounted ? (
@@ -458,10 +438,7 @@ export function WeeklyScheduleClient({
                             </p>
                             <Link
                               href="/admin/members"
-                              className={cn(
-                                buttonVariants({ variant: "outline", size: "sm" }),
-                                "border-primary text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
-                              )}
+                              className={buttonVariants({ variant: "outline", size: "sm" })}
                             >
                               メンバーを追加
                             </Link>
@@ -513,10 +490,7 @@ export function WeeklyScheduleClient({
                         </p>
                         <Link
                           href="/admin/members"
-                          className={cn(
-                            buttonVariants({ variant: "outline", size: "sm" }),
-                            "border-primary text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15",
-                          )}
+                          className={buttonVariants({ variant: "outline", size: "sm" })}
                         >
                           メンバーを追加
                         </Link>
@@ -537,7 +511,8 @@ export function WeeklyScheduleClient({
           )}
         </div>
       </ScheduleTooltipProvider>
-    </div>
+      </PageStack>
+    </PageContainer>
   );
 }
 

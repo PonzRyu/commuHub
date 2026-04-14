@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
       default: appName,
       template: `%s | ${appName}`,
     },
-    description: "チーム内予定表でメンバーの週間日程を把握するアプリ",
+    description: "チーム内予定表でメンバーのウィークリースケジュールを把握するアプリ",
   };
 }
 

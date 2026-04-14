@@ -6,7 +6,7 @@ export function DeveloperFooter() {
       className="border-border/60 bg-background mt-auto border-t py-2"
       aria-label="開発者情報"
     >
-      <div className="text-muted-foreground mx-auto flex max-w-3xl items-end justify-center px-4">
+      <div className="text-muted-foreground mx-auto flex max-w-[1200px] items-end justify-center px-4">
         <div className="min-w-0 flex-1" aria-hidden="true" />
         <div className="mx-auto min-w-0 max-w-full shrink text-center">
           <p className="mb-0.5 text-[10px] font-medium tracking-[0.28em] uppercase">

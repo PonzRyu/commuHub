@@ -10,6 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getAppDisplayName, getAppDisplayNamePrefix } from "@/lib/app-display-name";
 import { DisplayNameForm } from "./display-name-form";
+import { PageStack } from "@/components/page-stack";
 
 export async function generateMetadata(): Promise<Metadata> {
   const name = await getAppDisplayName();
@@ -20,11 +21,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AdminHubPage() {
-  const appName = await getAppDisplayName();
   const displayPrefix = await getAppDisplayNamePrefix();
 
   return (
-    <div className="flex flex-col gap-8">
+    <PageStack>
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">管理</h1>
       </div>
@@ -35,12 +35,12 @@ export default async function AdminHubPage() {
             <CardTitle className="text-base">部署</CardTitle>
             <CardDescription>部署マスターを管理します。</CardDescription>
           </CardHeader>
-          <div className="mt-auto px-4">
+          <div className="mt-auto flex justify-end px-4">
             <Link
               href="/admin/departments"
               className={cn(
-                buttonVariants({ variant: "default" }),
-                "inline-flex w-full justify-center",
+                buttonVariants({ variant: "default", size: "sm" }),
+                "w-36 justify-center text-sm",
               )}
             >
               部署の管理へ
@@ -50,16 +50,14 @@ export default async function AdminHubPage() {
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle className="text-base">メンバー</CardTitle>
-            <CardDescription>
-              メンバーとカレンダーを管理します。
-            </CardDescription>
+            <CardDescription>メンバーとカレンダーを管理します。</CardDescription>
           </CardHeader>
-          <div className="mt-auto px-4">
+          <div className="mt-auto flex justify-end px-4">
             <Link
               href="/admin/members"
               className={cn(
-                buttonVariants({ variant: "default" }),
-                "inline-flex w-full justify-center",
+                buttonVariants({ variant: "default", size: "sm" }),
+                "w-36 justify-center text-sm",
               )}
             >
               メンバーの管理へ
@@ -70,6 +68,6 @@ export default async function AdminHubPage() {
 
       <DisplayNameForm initialPrefix={displayPrefix} />
       
-    </div>
+    </PageStack>
   );
 }
