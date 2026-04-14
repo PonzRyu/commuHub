@@ -64,6 +64,25 @@ export default async function AdminHubPage() {
             </Link>
           </div>
         </Card>
+        <Card className="flex flex-col sm:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base">外部リンク</CardTitle>
+            <CardDescription>
+              トップバーに表示する外部サイトへのリンクを設定します（最大 5 件）。
+            </CardDescription>
+          </CardHeader>
+          <div className="mt-auto flex justify-end px-4">
+            <Link
+              href="/admin/external-links"
+              className={cn(
+                buttonVariants({ variant: "default", size: "sm" }),
+                "w-36 justify-center text-sm",
+              )}
+            >
+              外部リンクの設定へ
+            </Link>
+          </div>
+        </Card>
       </div>
 
       <DisplayNameForm initialPrefix={displayPrefix} />

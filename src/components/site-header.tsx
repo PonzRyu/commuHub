@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { getAppDisplayName } from "@/lib/app-display-name";
+import { listExternalNavLinksPublic } from "@/lib/external-nav-links";
 import { SiteHeaderNav } from "@/components/site-header-nav";
 
 export async function SiteHeader() {
   const appName = await getAppDisplayName();
+  const externalLinks = await listExternalNavLinksPublic();
 
   return (
     <header className="bg-background border-b">
@@ -14,7 +16,7 @@ export async function SiteHeader() {
         >
           {appName}
         </Link>
-        <SiteHeaderNav />
+        <SiteHeaderNav externalLinks={externalLinks} />
       </div>
     </header>
   );

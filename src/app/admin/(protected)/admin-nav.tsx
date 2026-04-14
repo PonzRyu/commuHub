@@ -26,6 +26,11 @@ const LINKS: AdminNavLink[] = [
     label: "メンバー",
     isActive: (pathname) => pathname === "/admin/members",
   },
+  {
+    href: "/admin/external-links",
+    label: "外部リンク",
+    isActive: (pathname) => pathname === "/admin/external-links",
+  },
 ];
 
 export function AdminNav() {
