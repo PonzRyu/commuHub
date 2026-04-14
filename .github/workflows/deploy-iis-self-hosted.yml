@@ -101,12 +101,3 @@ jobs:
           [System.IO.File]::WriteAllLines((Join-Path $deployRoot ".env"), $lines, $utf8NoBom)
           exit 0
 
-      - name: Recycle IIS app pool (optional)
-        if: ${{ vars.IIS_APP_POOL_NAME != '' }}
-        shell: powershell
-        env:
-          IIS_APP_POOL_NAME: ${{ vars.IIS_APP_POOL_NAME }}
-        run: |
-          Import-Module WebAdministration -ErrorAction Stop
-          Restart-WebAppPool -Name $env:IIS_APP_POOL_NAME
-          exit 0
