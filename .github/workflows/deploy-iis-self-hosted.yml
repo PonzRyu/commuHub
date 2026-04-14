@@ -1,0 +1,109 @@
+# IIS 上の Windows セルフホストランナーへ Next.js（standalone）をデプロイする。
+#
+# 事前準備（サーバー / ランナー）:
+# - GitHub にセルフホストランナーを登録し、ランナーに `Windows` ラベル（本ワークフロー用）を付与する。
+# - Node.js 20.x（package.json の engines に合わせる）をランナーにインストール。
+# - PostgreSQL がアプリから参照できること。
+# - IIS はリバースプロキシ（ARR）等で Node が待ち受けるポートへ転送するか、
+#   別途 Windows サービス / PM2 で `node server.js`（standalone ルート）を起動する。
+#
+# GitHub リポジトリの Variables（Settings > Secrets and variables > Actions > Variables）:
+# - DEPLOY_TARGET_PATH : 例 C:\inetpub\wwwroot\commuhub（.next/standalone の中身を配置する物理パス）
+#
+# Secrets:
+# - DATABASE_URL（Prisma 用。migrate deploy と実行時の両方で使用する場合はワークフローで .env を生成）
+# - ADMIN_PASSWORD
+# - ADMIN_SESSION_SECRET
+#
+# 任意 Variables（アプリ再起動を自動化する場合）:
+# - IIS_APP_POOL_NAME : 指定時のみ `Restart-WebAppPool` を実行（WebAdministration モジュール要）
+
+name: Deploy to IIS (self-hosted Windows)
+
+on:
+  push:
+    branches:
+      - deploy/actions
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-iis-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on:
+      - self-hosted
+      - Windows
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.0"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma migrate deploy
+
+      - name: Build Next.js (includes prisma generate)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          ADMIN_SESSION_SECRET: ${{ secrets.ADMIN_SESSION_SECRET }}
+          NODE_ENV: production
+        run: npm run build
+
+      - name: Copy static and public into standalone bundle
+        run: npm run deploy:copy-standalone-assets
+
+      - name: Sync standalone output to IIS site folder
+        shell: pwsh
+        env:
+          DEPLOY_TARGET_PATH: ${{ vars.DEPLOY_TARGET_PATH }}
+        run: |
+          if (-not $env:DEPLOY_TARGET_PATH -or [string]::IsNullOrWhiteSpace($env:DEPLOY_TARGET_PATH)) {
+            throw "Repository variable DEPLOY_TARGET_PATH is not set (e.g. C:\inetpub\commuhub)."
+          }
+          $src = Join-Path $env:GITHUB_WORKSPACE ".next\standalone"
+          $dest = $env:DEPLOY_TARGET_PATH
+          if (-not (Test-Path $dest)) {
+            New-Item -ItemType Directory -Path $dest -Force | Out-Null
+          }
+          robocopy $src $dest /MIR /COPY:DAT /R:2 /W:2 /NFL /NDL /NJH /NJS
+          if ($LASTEXITCODE -ge 8) { throw "robocopy failed with exit code $LASTEXITCODE" }
+
+      - name: Write production .env on deploy target
+        shell: pwsh
+        env:
+          DEPLOY_TARGET_PATH: ${{ vars.DEPLOY_TARGET_PATH }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          ADMIN_SESSION_SECRET: ${{ secrets.ADMIN_SESSION_SECRET }}
+        run: |
+          $deployRoot = $env:DEPLOY_TARGET_PATH
+          $lines = @(
+            "NODE_ENV=production",
+            "DATABASE_URL=$($env:DATABASE_URL)",
+            "ADMIN_PASSWORD=$($env:ADMIN_PASSWORD)",
+            "ADMIN_SESSION_SECRET=$($env:ADMIN_SESSION_SECRET)"
+          )
+          $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+          [System.IO.File]::WriteAllLines((Join-Path $deployRoot ".env"), $lines, $utf8NoBom)
+
+      - name: Recycle IIS app pool (optional)
+        if: ${{ vars.IIS_APP_POOL_NAME != '' }}
+        shell: pwsh
+        env:
+          IIS_APP_POOL_NAME: ${{ vars.IIS_APP_POOL_NAME }}
+        run: |
+          Import-Module WebAdministration -ErrorAction Stop
+          Restart-WebAppPool -Name $env:IIS_APP_POOL_NAME
