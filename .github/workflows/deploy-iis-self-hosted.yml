@@ -17,8 +17,6 @@
 #
 # 任意 Variables（アプリ再起動を自動化する場合）:
 # - IIS_APP_POOL_NAME : 指定時のみ `Restart-WebAppPool` を実行（WebAdministration モジュール要）
-# - NSSM_SERVICE_NAME : デプロイ前に stop / 後に start する NSSM サービス名（例: CommuHubNode）
-# - NSSM_EXE_PATH : nssm.exe のフルパス（例: C:\nssm-2.24\win64\nssm.exe）。未設定の場合は `nssm` を PATH から探す。
 
 name: Deploy to IIS (self-hosted Windows)
 
@@ -39,17 +37,6 @@ jobs:
       - Windows
 
     steps:
-      - name: Stop app service before checkout (optional)
-        if: ${{ vars.NSSM_SERVICE_NAME != '' }}
-        shell: powershell
-        env:
-          NSSM_SERVICE_NAME: ${{ vars.NSSM_SERVICE_NAME }}
-          NSSM_EXE_PATH: ${{ vars.NSSM_EXE_PATH }}
-        run: |
-          $nssm = if ($env:NSSM_EXE_PATH -and -not [string]::IsNullOrWhiteSpace($env:NSSM_EXE_PATH)) { $env:NSSM_EXE_PATH } else { "nssm" }
-          & $nssm stop $env:NSSM_SERVICE_NAME
-          exit 0
-
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Node.js
@@ -112,17 +99,6 @@ jobs:
           )
           $utf8NoBom = New-Object System.Text.UTF8Encoding $false
           [System.IO.File]::WriteAllLines((Join-Path $deployRoot ".env"), $lines, $utf8NoBom)
-          exit 0
-
-      - name: Start app service (optional)
-        if: ${{ always() && vars.NSSM_SERVICE_NAME != '' }}
-        shell: powershell
-        env:
-          NSSM_SERVICE_NAME: ${{ vars.NSSM_SERVICE_NAME }}
-          NSSM_EXE_PATH: ${{ vars.NSSM_EXE_PATH }}
-        run: |
-          $nssm = if ($env:NSSM_EXE_PATH -and -not [string]::IsNullOrWhiteSpace($env:NSSM_EXE_PATH)) { $env:NSSM_EXE_PATH } else { "nssm" }
-          & $nssm start $env:NSSM_SERVICE_NAME
           exit 0
 
       - name: Recycle IIS app pool (optional)
