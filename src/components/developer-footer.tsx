@@ -1,3 +1,6 @@
+import { APP_DISPLAY_NAME_SUFFIX } from "@/lib/app-display-constants";
+import { APP_VERSION } from "@/lib/app-version";
+
 export function DeveloperFooter() {
   const year = new Date().getFullYear();
 
@@ -7,7 +10,14 @@ export function DeveloperFooter() {
       aria-label="開発者情報"
     >
       <div className="text-muted-foreground mx-auto flex max-w-[1200px] items-end justify-center px-4">
-        <div className="min-w-0 flex-1" aria-hidden="true" />
+        <div className="flex min-w-0 flex-1 justify-start">
+          <p
+            className="text-muted-foreground/90 shrink-0 font-mono text-[11px] tracking-wide"
+            aria-label={`${APP_DISPLAY_NAME_SUFFIX} のバージョン ${APP_VERSION}`}
+          >
+            {APP_DISPLAY_NAME_SUFFIX} v{APP_VERSION}
+          </p>
+        </div>
         <div className="mx-auto min-w-0 max-w-full shrink text-center">
           <p className="mb-0.5 text-[10px] font-medium tracking-[0.28em] uppercase">
             Developer
@@ -36,7 +46,7 @@ export function DeveloperFooter() {
           </nav>
         </div>
         <div className="flex min-w-0 flex-1 justify-end">
-          <p className="text-muted-foreground/90 shrink-0 font-mono text-[10px] tracking-wide">
+          <p className="text-muted-foreground/90 shrink-0 font-mono text-[11px] tracking-wide">
             © {year} PonzRyu
           </p>
         </div>

@@ -20,6 +20,20 @@ model SiteConfig {
   displayName String @default("PonzRyu")
 }
 
+/// トップバーに表示する外部サイトリンク（最大 5 件）。sortOrder が小さいほど左。
+model ExternalNavLink {
+  id        String   @id @default(cuid())
+  /// メニュー表示名（サイト名）
+  label     String
+  /// https:// などの絶対 URL
+  url       String   @db.Text
+  sortOrder Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+}
+
 /// 部署（FR-SEC-*）。名称は一意。
 model Department {
   id        String    @id @default(cuid())
