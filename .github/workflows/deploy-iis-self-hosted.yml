@@ -39,12 +39,19 @@ jobs:
       - Windows
 
     steps:
+      - name: Stop app service before checkout (optional)
+        if: ${{ vars.NSSM_SERVICE_NAME != '' }}
+        shell: powershell
+        env:
+          NSSM_SERVICE_NAME: ${{ vars.NSSM_SERVICE_NAME }}
+          NSSM_EXE_PATH: ${{ vars.NSSM_EXE_PATH }}
+        run: |
+          $nssm = if ($env:NSSM_EXE_PATH -and -not [string]::IsNullOrWhiteSpace($env:NSSM_EXE_PATH)) { $env:NSSM_EXE_PATH } else { "nssm" }
+          & $nssm stop $env:NSSM_SERVICE_NAME
+          exit 0
+
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          # Windows セルフホストでは、プロセスがファイルを掴んでいると clean が固まることがある。
-          # clean は無効化し、必要なら runner 側で定期的に _work を手動掃除する。
-          clean: false
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -69,18 +76,6 @@ jobs:
 
       - name: Copy static and public into standalone bundle
         run: npm run deploy:copy-standalone-assets
-
-      - name: Stop app service (optional)
-        if: ${{ vars.NSSM_SERVICE_NAME != '' }}
-        shell: powershell
-        env:
-          NSSM_SERVICE_NAME: ${{ vars.NSSM_SERVICE_NAME }}
-          NSSM_EXE_PATH: ${{ vars.NSSM_EXE_PATH }}
-        run: |
-          $nssm = if ($env:NSSM_EXE_PATH -and -not [string]::IsNullOrWhiteSpace($env:NSSM_EXE_PATH)) { $env:NSSM_EXE_PATH } else { "nssm" }
-          & $nssm stop $env:NSSM_SERVICE_NAME
-          # stop に失敗してもデプロイ自体は続ける（ロック問題回避のためベストエフォート）
-          exit 0
 
       - name: Sync standalone output to IIS site folder
         shell: powershell
