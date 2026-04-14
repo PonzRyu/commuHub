@@ -2,7 +2,7 @@
  * `next build`（standalone）後に、Next が要求する `.next/static` と `public` を
  * `.next/standalone` 配下へコピーする（IIS / 本番 Node 向けデプロイ用）。
  */
-import { cp, mkdir, rm } from "node:fs/promises";
+import { copyFile, cp, mkdir, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,6 +15,8 @@ const staticSrc = path.join(root, ".next", "static");
 const staticDest = path.join(standalone, ".next", "static");
 const publicSrc = path.join(root, "public");
 const publicDest = path.join(standalone, "public");
+const iisWebConfigSrc = path.join(root, "deploy", "iis", "web.config");
+const iisWebConfigDest = path.join(standalone, "web.config");
 
 if (!existsSync(standalone)) {
   console.error("先に `npm run build` を実行してください（.next/standalone がありません）。");
@@ -26,4 +28,6 @@ await rm(staticDest, { recursive: true, force: true });
 await rm(publicDest, { recursive: true, force: true });
 await cp(staticSrc, staticDest, { recursive: true });
 await cp(publicSrc, publicDest, { recursive: true });
+
+if (existsSync(iisWebConfigSrc)) await copyFile(iisWebConfigSrc, iisWebConfigDest);
 console.log("copy-standalone-assets: OK");
