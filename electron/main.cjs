@@ -4,14 +4,6 @@ const net = require("node:net");
 const { spawn } = require("node:child_process");
 const fs = require("node:fs");
 
-const DEFAULT_PORT = 3000;
-const LOCAL_URL = `http://127.0.0.1:${DEFAULT_PORT}`;
-
-/** @type {import('child_process').ChildProcess | null} */
-let serverProcess = null;
-/** @type {BrowserWindow | null} */
-let mainWindow = null;
-
 function loadEnvFromFile(filePath) {
   try {
     const raw = fs.readFileSync(filePath, "utf8");
@@ -34,6 +26,28 @@ function loadEnvFromFile(filePath) {
     // 未作成でもよい
   }
 }
+
+try {
+  loadEnvFromFile(path.join(app.getPath("userData"), "commuhub.env"));
+} catch {
+  // app 初期化前などは whenReady 側で再読込
+}
+
+if (process.env.COMMUHUB_ELECTRON_STRICT_TLS !== "1") {
+  /**
+   * 外部 HTTPS（自己署名・期限切れ等）も Chromium 全体で許可する。
+   * session の certificate-error だけでは拾えない経路があるため併用する。
+   */
+  app.commandLine.appendSwitch("ignore-certificate-errors");
+}
+
+const DEFAULT_PORT = 3000;
+const LOCAL_URL = `http://127.0.0.1:${DEFAULT_PORT}`;
+
+/** @type {import('child_process').ChildProcess | null} */
+let serverProcess = null;
+/** @type {BrowserWindow | null} */
+let mainWindow = null;
 
 function waitForPort(port, timeoutMs = 90_000) {
   return new Promise((resolve, reject) => {
