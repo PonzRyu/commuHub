@@ -23,7 +23,7 @@ name: Deploy to IIS (self-hosted Windows)
 on:
   push:
     branches:
-      - deploy/actions
+      - main
   workflow_dispatch:
 
 concurrency:
