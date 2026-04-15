@@ -20,6 +20,8 @@
     "db:logs": "podman compose logs -f db",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "deploy:copy-standalone-assets": "node scripts/copy-standalone-assets.mjs",
     "db:studio": "prisma studio",
     "electron:icon": "node scripts/rasterize-electron-icon.mjs",
     "electron:dev": "node scripts/rasterize-electron-icon.mjs && concurrently -k \"npm run dev\" \"wait-on http://127.0.0.1:3000 && electron .\"",
@@ -76,6 +78,13 @@
       {
         "from": ".next/standalone",
         "to": "next-standalone",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": ".next/standalone/node_modules",
+        "to": "next-standalone/node_modules",
         "filter": [
           "**/*"
         ]

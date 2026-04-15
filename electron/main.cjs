@@ -4,14 +4,6 @@ const net = require("node:net");
 const { spawn } = require("node:child_process");
 const fs = require("node:fs");
 
-const DEFAULT_PORT = 3000;
-const LOCAL_URL = `http://127.0.0.1:${DEFAULT_PORT}`;
-
-/** @type {import('child_process').ChildProcess | null} */
-let serverProcess = null;
-/** @type {BrowserWindow | null} */
-let mainWindow = null;
-
 function loadEnvFromFile(filePath) {
   try {
     const raw = fs.readFileSync(filePath, "utf8");
@@ -34,6 +26,48 @@ function loadEnvFromFile(filePath) {
     // 未作成でもよい
   }
 }
+
+try {
+  loadEnvFromFile(path.join(app.getPath("userData"), "commuhub.env"));
+} catch {
+  // app 初期化前などは whenReady 側で再読込
+}
+
+function loadDotEnvIfPresent() {
+  try {
+    // 配布時に exe と同じ階層に置く想定（electron-builder の extraResources 等で同梱してもよい）
+    loadEnvFromFile(path.join(process.resourcesPath, "..", ".env"));
+    // standalone 同梱を使う場合の配置先
+    loadEnvFromFile(path.join(getStandaloneDir(), ".env"));
+  } catch {
+    // 未作成でもよい
+  }
+}
+
+if (process.env.COMMUHUB_ELECTRON_STRICT_TLS !== "1") {
+  /**
+   * 外部 HTTPS（自己署名・期限切れ等）も Chromium 全体で許可する。
+   * session の certificate-error だけでは拾えない経路があるため併用する。
+   */
+  app.commandLine.appendSwitch("ignore-certificate-errors");
+}
+
+const DEFAULT_PORT = 3000;
+const LOCAL_URL = `http://127.0.0.1:${DEFAULT_PORT}`;
+const DEFAULT_REMOTE_URL = "https://25.20.10.200:5443";
+
+function getRemoteUrl() {
+  const configured = process.env.COMMUHUB_ELECTRON_REMOTE_URL;
+  if (configured && configured.trim()) return configured.trim();
+  // 配布版は「社内本番URL固定」がデフォルト
+  if (app.isPackaged) return DEFAULT_REMOTE_URL;
+  return undefined;
+}
+
+/** @type {import('child_process').ChildProcess | null} */
+let serverProcess = null;
+/** @type {BrowserWindow | null} */
+let mainWindow = null;
 
 function waitForPort(port, timeoutMs = 90_000) {
   return new Promise((resolve, reject) => {
@@ -91,10 +125,11 @@ function startNextStandalone() {
   serverProcess = spawn(nodeBin, [serverJs], {
     cwd: standaloneDir,
     env,
-    stdio: "inherit",
-    windowsHide: false,
+    stdio: "ignore",
+    windowsHide: true,
   });
 
+  serverProcess.unref();
   serverProcess.on("error", (err) => {
     console.error("Next サーバー起動エラー:", err);
   });
@@ -139,7 +174,9 @@ function createWindow() {
     },
   });
 
-  mainWindow.loadURL(LOCAL_URL);
+  const remoteUrl = getRemoteUrl();
+  const startUrl = remoteUrl ?? LOCAL_URL;
+  mainWindow.loadURL(startUrl);
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
@@ -154,6 +191,13 @@ async function ready() {
     return;
   }
 
+  loadDotEnvIfPresent();
+
+  if (getRemoteUrl()) {
+    createWindow();
+    return;
+  }
+
   startNextStandalone();
   await waitForPort(DEFAULT_PORT);
   createWindow();
@@ -161,6 +205,7 @@ async function ready() {
 
 app.whenReady().then(() => {
   loadEnvFromFile(path.join(app.getPath("userData"), "commuhub.env"));
+  loadDotEnvIfPresent();
   registerTlsCertificateBypassIfNeeded();
   ready().catch((err) => {
     console.error(err);
