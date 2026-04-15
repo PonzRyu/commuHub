@@ -90,20 +90,27 @@ export async function expandIcsToWeekOccurrences(
     const instances = collectInstancesForEvent(event, range);
     for (const inst of instances) {
       const loc = parameterToOptionalString(inst.event?.location);
+      const spanEndForDisplay = inst.isFullDay
+        ? new Date(inst.end.getTime() - 1)
+        : inst.end;
       const base = {
         summary: summaryToString(inst.summary),
         location: loc,
         isFullDay: inst.isFullDay,
         spanStart: inst.start,
-        spanEnd: inst.end,
+        spanEnd: spanEndForDisplay,
       };
 
       // 終日で複数日にまたがる場合は、期間内の各日ぶんを作って「連続表示」させる
       if (inst.isFullDay) {
         const startYmd = toTokyoYmd(inst.start);
-        const endYmd = toTokyoYmd(inst.end);
+        // iCalendar の終日予定は DTEND が「排他的（翌日 00:00）」になっていることが多い。
+        // 表示上の最終日は end - 1ms の日付として扱う。
+        const inclusiveEndYmd = toTokyoYmd(new Date(inst.end.getTime() - 1));
         const sameDay =
-          startYmd.y === endYmd.y && startYmd.m === endYmd.m && startYmd.d === endYmd.d;
+          startYmd.y === inclusiveEndYmd.y &&
+          startYmd.m === inclusiveEndYmd.m &&
+          startYmd.d === inclusiveEndYmd.d;
 
         if (!sameDay) {
           // この週レンジに収まる範囲で切って日次展開
@@ -111,7 +118,7 @@ export async function expandIcsToWeekOccurrences(
           const toYmd = toTokyoYmd(new Date(range.toExclusive.getTime() - 1));
 
           let cursor = startYmd;
-          // end は「終日の終了日」を含めたいので、endYmd まで（最大 8 日程度に収まる想定）
+          // end は表示上の最終日（inclusiveEndYmd）まで（最大 8 日程度に収まる想定）
           for (let guard = 0; guard < 32; guard++) {
             const inWeek =
               (cursor.y > fromYmd.y ||
@@ -133,9 +140,9 @@ export async function expandIcsToWeekOccurrences(
             }
 
             if (
-              cursor.y === endYmd.y &&
-              cursor.m === endYmd.m &&
-              cursor.d === endYmd.d
+              cursor.y === inclusiveEndYmd.y &&
+              cursor.m === inclusiveEndYmd.m &&
+              cursor.d === inclusiveEndYmd.d
             )
               break;
             cursor = addCalendarDaysTokyo(cursor, 1);
@@ -143,6 +150,14 @@ export async function expandIcsToWeekOccurrences(
 
           continue;
         }
+
+        // 単日終日：start/end を同日に揃える（spanStart/spanEnd は実期間のまま）
+        out.push({
+          ...base,
+          start: inst.start,
+          end: inst.start,
+        });
+        continue;
       }
 
       out.push({
