@@ -17,6 +17,8 @@ const publicSrc = path.join(root, "public");
 const publicDest = path.join(standalone, "public");
 const iisWebConfigSrc = path.join(root, "deploy", "iis", "web.config");
 const iisWebConfigDest = path.join(standalone, "web.config");
+const prismaGeneratedSrc = path.join(root, "src", "generated", "prisma");
+const prismaGeneratedDest = path.join(standalone, "src", "generated", "prisma");
 
 if (!existsSync(standalone)) {
   console.error("先に `npm run build` を実行してください（.next/standalone がありません）。");
@@ -30,4 +32,9 @@ await cp(staticSrc, staticDest, { recursive: true });
 await cp(publicSrc, publicDest, { recursive: true });
 
 if (existsSync(iisWebConfigSrc)) await copyFile(iisWebConfigSrc, iisWebConfigDest);
+if (existsSync(prismaGeneratedSrc)) {
+  await rm(prismaGeneratedDest, { recursive: true, force: true });
+  await mkdir(path.dirname(prismaGeneratedDest), { recursive: true });
+  await cp(prismaGeneratedSrc, prismaGeneratedDest, { recursive: true });
+}
 console.log("copy-standalone-assets: OK");
