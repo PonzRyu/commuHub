@@ -1,10 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { DepartmentFilterOption } from "./weekly-schedule";
+
+const ALL_DEPARTMENT_VALUE = "すべての部署";
 
 export function DepartmentFilter({
   mondayParam,
@@ -42,36 +50,34 @@ export function DepartmentFilter({
       >
         部署
       </label>
-      <div className="relative">
-        <select
+      <Select
+        value={departmentId && departmentId.length > 0 ? departmentId : ALL_DEPARTMENT_VALUE}
+        onValueChange={(next) =>
+          onChange(next == null || next === ALL_DEPARTMENT_VALUE ? "" : next)
+        }
+      >
+        <SelectTrigger
           id="department-filter"
-          value={departmentId ?? ""}
-          onChange={(e) => onChange(e.target.value)}
           className={cn(
             toolbarStyle
               ? cn(
                   buttonVariants({ variant: "outline", size: "sm" }),
-                  "w-full appearance-none pl-2.5 pr-8 text-left",
-                  "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                  "h-8 w-full justify-between px-2.5",
                 )
-              : cn(
-                  "border-input bg-background h-9 w-full rounded-lg border pl-3 pr-10 text-sm",
-                  "appearance-none outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-                ),
+              : "h-9 w-full px-3 text-sm",
           )}
         >
-          <option value="">すべての部署</option>
+          <SelectValue placeholder="すべての部署" />
+        </SelectTrigger>
+        <SelectContent className="max-h-[11rem]">
+          <SelectItem value={ALL_DEPARTMENT_VALUE}>すべての部署</SelectItem>
           {departments.map((d) => (
-            <option key={d.id} value={d.id}>
+            <SelectItem key={d.id} value={d.id}>
               {d.name}
-            </option>
+            </SelectItem>
           ))}
-        </select>
-        <ChevronDown
-          className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-          aria-hidden="true"
-        />
-      </div>
+        </SelectContent>
+      </Select>
     </div>
   );
 }

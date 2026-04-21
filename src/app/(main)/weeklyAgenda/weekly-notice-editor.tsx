@@ -52,6 +52,13 @@ import { PageContainer } from "@/components/page-container";
 import { PageStack } from "@/components/page-stack";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -61,6 +68,99 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
+const TIME_OPTION_STEP_MINUTES = 30;
+const MINUTES_PER_DAY = 24 * 60;
+
+interface ScheduleTimeRange {
+  start: string;
+  end: string;
+}
+
+function parseTimeToMinutes(value: string): number | null {
+  const match = value.match(/^([01]\d|2[0-3]):([0-5]\d)$/);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  return hours * 60 + minutes;
+}
+
+function minutesToTimeLabel(totalMinutes: number): string {
+  const hours = Math.floor(totalMinutes / 60)
+    .toString()
+    .padStart(2, "0");
+  const minutes = (totalMinutes % 60).toString().padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
+function buildScheduleTimeOptions(): string[] {
+  const options: string[] = [];
+  for (let minutes = 0; minutes < MINUTES_PER_DAY; minutes += TIME_OPTION_STEP_MINUTES) {
+    options.push(minutesToTimeLabel(minutes));
+  }
+  return options;
+}
+
+const SCHEDULE_TIME_OPTIONS = buildScheduleTimeOptions();
+
+function parseScheduleTimeRange(value: string): ScheduleTimeRange {
+  const trimmed = value.trim();
+  if (!trimmed) return { start: "", end: "" };
+
+  const normalized = trimmed
+    .replace(/[〜～]/g, "~")
+    .replace(/[–—−]/g, "-");
+
+  const [left = "", right = ""] = normalized.split(/\s*(?:~|-)\s*/, 2);
+  const start = parseTimeToMinutes(left) == null ? "" : left;
+  const end = parseTimeToMinutes(right) == null ? "" : right;
+  return { start, end };
+}
+
+function buildScheduleTimeText(start: string, end: string): string {
+  if (start && end) return `${start} ~ ${end}`;
+  if (start) return start;
+  if (end) return `~ ${end}`;
+  return "";
+}
+
+function TimeSelect({
+  value,
+  disabled,
+  ariaLabel,
+  placeholder,
+  onChange,
+}: {
+  value: string;
+  disabled: boolean;
+  ariaLabel: string;
+  placeholder: string;
+  onChange: (next: string) => void;
+}) {
+  const EMPTY_VALUE = "選択";
+
+  return (
+    <Select
+      value={value || EMPTY_VALUE}
+      disabled={disabled}
+      onValueChange={(next) => onChange(next == null || next === EMPTY_VALUE ? "" : next)}
+    >
+      <SelectTrigger
+        className="h-9 w-full min-w-0 px-2 text-sm font-tabular-nums"
+        aria-label={ariaLabel}
+      >
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent className="max-h-[11rem]">
+        <SelectItem value={EMPTY_VALUE}>{placeholder}</SelectItem>
+        {SCHEDULE_TIME_OPTIONS.map((time) => (
+          <SelectItem key={time} value={time}>
+            {time}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
 function scheduleHasAnyCellContent(data: WeeklyAgendaScheduleDataV1): boolean {
   return data.days.some((day) =>
     day.some((r) => r.time.trim().length > 0 || r.text.trim().length > 0),
@@ -507,7 +607,7 @@ export function WeeklyNoticeEditor({
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[8.5rem]">曜日</TableHead>
-                      <TableHead className="min-w-[11rem] w-[11rem]">時間</TableHead>
+                      <TableHead className="min-w-[14rem] w-[14rem]">時間</TableHead>
                       <TableHead className="min-w-0">内容</TableHead>
                       <TableHead className="w-[5.5rem] text-right">操作</TableHead>
                     </TableRow>
@@ -554,7 +654,7 @@ export function WeeklyNoticeEditor({
                                   {d.label}
                                 </span>
                               </TableCell>
-                              <TableCell className="text-muted-foreground align-top min-w-[11rem] w-[11rem]">
+                              <TableCell className="text-muted-foreground align-top min-w-[14rem] w-[14rem]">
                                 —
                               </TableCell>
                               <TableCell className="text-muted-foreground align-top">—</TableCell>
@@ -730,6 +830,9 @@ function ScheduleSortableRow({
 }) {
   const { attributes, listeners, setActivatorNodeRef, setNodeRef, isDragging, transform, transition } =
     useSortable({ id: row.id });
+  const parsedRange = parseScheduleTimeRange(row.time);
+  const hasLegacyTimeValue =
+    row.time.trim().length > 0 && !parsedRange.start && !parsedRange.end;
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -755,7 +858,7 @@ function ScheduleSortableRow({
           </span>
         )}
       </TableCell>
-      <TableCell className="align-top min-w-[11rem] w-[11rem]">
+      <TableCell className="align-top min-w-[14rem] w-[14rem]">
         <div className="flex min-w-0 items-start gap-2">
           <button
             type="button"
@@ -772,14 +875,40 @@ function ScheduleSortableRow({
           >
             <GripVertical className="size-4" aria-hidden />
           </button>
-          <Input
-            className="min-w-0 flex-1 font-tabular-nums"
-            value={row.time}
-            onChange={(e) => updateScheduleRow(dayIndex, row.id, { time: e.target.value })}
-            placeholder="例: 10:00 ~ 11:00"
-            disabled={scheduleBusy}
-            aria-label={`${dayLabel}曜日の時間`}
-          />
+          <div className="min-w-0 flex-1">
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
+              <TimeSelect
+                value={parsedRange.start}
+                disabled={scheduleBusy}
+                onChange={(next) =>
+                  updateScheduleRow(dayIndex, row.id, {
+                    time: buildScheduleTimeText(next, parsedRange.end),
+                  })
+                }
+                ariaLabel={`${dayLabel}曜日の開始時間`}
+                placeholder="開始"
+              />
+              <span className="text-muted-foreground text-sm font-medium" aria-hidden>
+                ~
+              </span>
+              <TimeSelect
+                value={parsedRange.end}
+                disabled={scheduleBusy}
+                onChange={(next) =>
+                  updateScheduleRow(dayIndex, row.id, {
+                    time: buildScheduleTimeText(parsedRange.start, next),
+                  })
+                }
+                ariaLabel={`${dayLabel}曜日の終了時間`}
+                placeholder="終了"
+              />
+            </div>
+            {hasLegacyTimeValue ? (
+              <p className="text-muted-foreground mt-1 text-xs">
+                既存の時間表記: {row.time}
+              </p>
+            ) : null}
+          </div>
         </div>
       </TableCell>
       <TableCell className="align-top whitespace-normal">
