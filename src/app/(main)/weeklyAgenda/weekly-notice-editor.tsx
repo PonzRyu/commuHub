@@ -150,7 +150,11 @@ function TimeSelect({
       >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent className="max-h-[11rem]">
+      <SelectContent
+        className="max-h-[11rem]"
+        align="start"
+        alignItemWithTrigger={false}
+      >
         <SelectItem value={EMPTY_VALUE}>{placeholder}</SelectItem>
         {SCHEDULE_TIME_OPTIONS.map((time) => (
           <SelectItem key={time} value={time}>
