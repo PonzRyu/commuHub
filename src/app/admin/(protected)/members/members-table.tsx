@@ -29,7 +29,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   deleteMember,
   deleteMemberIcs,
@@ -39,6 +45,7 @@ import {
 import type { DepartmentOption } from "./create-member-form";
 
 const ICS_URL_DISPLAY_MAX = 20;
+const DISPLAY_ORDER_NONE_VALUE = "選択してください";
 
 function formatJaDateTime(iso: string): string {
   try {
@@ -85,6 +92,8 @@ export function MembersTable({
   const [icsUrlInput, setIcsUrlInput] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const selectedEditDepartmentName =
+    departments.find((department) => department.id === editDeptId)?.name ?? "";
 
   function openEdit(row: MemberRow) {
     setActive(row);
@@ -293,42 +302,48 @@ export function MembersTable({
             </div>
             <div className="grid gap-2">
               <Label htmlFor="edit-member-dept">部署</Label>
-              <select
-                id="edit-member-dept"
+              <Select
                 value={editDeptId}
-                onChange={(e) => setEditDeptId(e.target.value)}
+                onValueChange={(next) => setEditDeptId(next ?? "")}
                 disabled={pending}
-                className={cn(
-                  "border-input bg-background h-8 w-full rounded-lg border px-2.5 text-sm",
-                  "outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-                )}
               >
+                <SelectTrigger id="edit-member-dept" className="h-8 w-full px-2.5 text-sm">
+                  <SelectValue placeholder="部署を選択">
+                    {selectedEditDepartmentName}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="max-h-[11rem]">
                 {departments.map((d) => (
-                  <option key={d.id} value={d.id}>
+                    <SelectItem key={d.id} value={d.id}>
                     {d.name}
-                  </option>
+                    </SelectItem>
                 ))}
-              </select>
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="edit-member-display-order">表示順（任意）</Label>
-              <select
-                id="edit-member-display-order"
-                value={editDisplayOrder}
-                onChange={(e) => setEditDisplayOrder(e.target.value)}
+              <Select
+                value={editDisplayOrder || DISPLAY_ORDER_NONE_VALUE}
+                onValueChange={(next) =>
+                  setEditDisplayOrder(
+                    next == null || next === DISPLAY_ORDER_NONE_VALUE ? "" : next,
+                  )
+                }
                 disabled={pending}
-                className={cn(
-                  "border-input bg-background h-8 w-full rounded-lg border px-2.5 text-sm",
-                  "outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-                )}
               >
-                <option value="">未選択（最後）</option>
-                <option value="1">1（最優先）</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-              </select>
+                <SelectTrigger id="edit-member-display-order" className="h-8 w-full px-2.5 text-sm">
+                  <SelectValue placeholder="未選択（最後）" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[11rem]">
+                  <SelectItem value={DISPLAY_ORDER_NONE_VALUE}>未選択（最後）</SelectItem>
+                  <SelectItem value="1">1（最優先）</SelectItem>
+                  <SelectItem value="2">2</SelectItem>
+                  <SelectItem value="3">3</SelectItem>
+                  <SelectItem value="4">4</SelectItem>
+                  <SelectItem value="5">5</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             {formError && editOpen ? (
               <p className="text-destructive text-sm" role="alert">
