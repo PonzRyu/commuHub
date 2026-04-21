@@ -171,11 +171,21 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
+      preload: path.join(__dirname, "preload.cjs"),
     },
   });
 
   const remoteUrl = getRemoteUrl();
   const startUrl = remoteUrl ?? LOCAL_URL;
+  /**
+   * Chromium 既定のズーム挙動を有効化する。
+   * - Ctrl + マウスホイール
+   * - Ctrl + +/- / 0
+   */
+  mainWindow.webContents.setZoomFactor(1);
+  mainWindow.webContents
+    .setVisualZoomLevelLimits(1, 3)
+    .catch((err) => console.error("ズーム設定エラー:", err));
   mainWindow.loadURL(startUrl);
   mainWindow.on("closed", () => {
     mainWindow = null;
