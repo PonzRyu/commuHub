@@ -30,6 +30,9 @@ export function DepartmentFilter({
   className?: string;
 }) {
   const router = useRouter();
+  const selectedDepartmentName =
+    departments.find((department) => department.id === departmentId)?.name ??
+    "";
 
   function onChange(nextDeptId: string) {
     const sp = new URLSearchParams();
@@ -67,7 +70,9 @@ export function DepartmentFilter({
               : "h-9 w-full px-3 text-sm",
           )}
         >
-          <SelectValue placeholder="すべての部署" />
+          <SelectValue placeholder="すべての部署">
+            {selectedDepartmentName || ALL_DEPARTMENT_VALUE}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent className="max-h-[11rem]">
           <SelectItem value={ALL_DEPARTMENT_VALUE}>すべての部署</SelectItem>
