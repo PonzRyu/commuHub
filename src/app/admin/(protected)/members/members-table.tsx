@@ -45,6 +45,7 @@ import {
 import type { DepartmentOption } from "./create-member-form";
 
 const ICS_URL_DISPLAY_MAX = 20;
+const DEPARTMENT_UNSELECTED_VALUE = "選択してください";
 const DISPLAY_ORDER_NONE_VALUE = "選択してください";
 
 function formatJaDateTime(iso: string): string {
@@ -303,16 +304,21 @@ export function MembersTable({
             <div className="grid gap-2">
               <Label htmlFor="edit-member-dept">部署</Label>
               <Select
-                value={editDeptId}
-                onValueChange={(next) => setEditDeptId(next ?? "")}
+                value={editDeptId || DEPARTMENT_UNSELECTED_VALUE}
+                onValueChange={(next) =>
+                  setEditDeptId(
+                    next == null || next === DEPARTMENT_UNSELECTED_VALUE ? "" : next,
+                  )
+                }
                 disabled={pending}
               >
                 <SelectTrigger id="edit-member-dept" className="h-8 w-full px-2.5 text-sm">
                   <SelectValue placeholder="部署を選択">
-                    {selectedEditDepartmentName}
+                    {selectedEditDepartmentName || DEPARTMENT_UNSELECTED_VALUE}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="max-h-[11rem]">
+                <SelectItem value={DEPARTMENT_UNSELECTED_VALUE}>選択してください</SelectItem>
                 {departments.map((d) => (
                     <SelectItem key={d.id} value={d.id}>
                     {d.name}
