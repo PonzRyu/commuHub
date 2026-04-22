@@ -99,7 +99,7 @@ export function CreateMemberForm({
             >
               <SelectTrigger id="member-dept" className="h-8 w-full px-2.5 text-sm">
                 <SelectValue placeholder="選択してください">
-                  {selectedDepartmentName}
+                  {selectedDepartmentName || DEPARTMENT_UNSELECTED_VALUE}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent className="max-h-[11rem]">

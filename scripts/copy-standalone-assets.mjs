@@ -35,6 +35,12 @@ if (existsSync(iisWebConfigSrc)) await copyFile(iisWebConfigSrc, iisWebConfigDes
 if (existsSync(prismaGeneratedSrc)) {
   await rm(prismaGeneratedDest, { recursive: true, force: true });
   await mkdir(path.dirname(prismaGeneratedDest), { recursive: true });
-  await cp(prismaGeneratedSrc, prismaGeneratedDest, { recursive: true });
+  await cp(prismaGeneratedSrc, prismaGeneratedDest, {
+    recursive: true,
+    filter: (sourcePath) => {
+      const fileName = path.basename(sourcePath);
+      return !fileName.includes(".tmp");
+    },
+  });
 }
 console.log("copy-standalone-assets: OK");
