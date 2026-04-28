@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { deleteDepartment, updateDepartment } from "./actions";
+import { DEMO_SENSITIVE_BLUR_CLASS } from "@/lib/demo-redaction";
 
 export type DepartmentRow = {
   id: string;
@@ -110,7 +111,9 @@ export function DepartmentsTable({ rows }: { rows: DepartmentRow[] }) {
             ) : (
               rows.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell className="font-medium">{row.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <span className={DEMO_SENSITIVE_BLUR_CLASS}>{row.name}</span>
+                  </TableCell>
                   <TableCell className="w-[1%] text-right align-middle whitespace-nowrap">
                     <div className="flex flex-nowrap justify-end gap-2">
                       <Button
@@ -151,6 +154,7 @@ export function DepartmentsTable({ rows }: { rows: DepartmentRow[] }) {
               onChange={(e) => setEditName(e.target.value)}
               maxLength={120}
               disabled={pending}
+              className={DEMO_SENSITIVE_BLUR_CLASS}
             />
             {formError && editOpen ? (
               <p className="text-destructive text-sm" role="alert">
@@ -181,7 +185,7 @@ export function DepartmentsTable({ rows }: { rows: DepartmentRow[] }) {
             <AlertDialogDescription>
               {active ? (
                 <>
-                  「<span className="font-medium">{active.name}</span>
+                  「<span className={DEMO_SENSITIVE_BLUR_CLASS}>{active.name}</span>
                   」を削除します。この操作は取り消せません。
                 </>
               ) : null}

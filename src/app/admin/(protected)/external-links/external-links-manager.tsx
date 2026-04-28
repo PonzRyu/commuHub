@@ -20,6 +20,7 @@ import {
   updateExternalLink,
   type ExternalLinksFormState,
 } from "../external-links-actions";
+import { DEMO_SENSITIVE_BLUR_CLASS } from "@/lib/demo-redaction";
 
 const emptyState: ExternalLinksFormState = { error: null };
 
@@ -38,6 +39,7 @@ function ExternalLinkRowFields({ link }: { link: ExternalNavLinkPublic }) {
           maxLength={MAX_EXTERNAL_LINK_LABEL_LEN}
           disabled={pending}
           autoComplete="off"
+          className={DEMO_SENSITIVE_BLUR_CLASS}
         />
       </div>
       <div className="grid gap-2">
@@ -50,6 +52,7 @@ function ExternalLinkRowFields({ link }: { link: ExternalNavLinkPublic }) {
           disabled={pending}
           autoComplete="off"
           placeholder="https://"
+          className={DEMO_SENSITIVE_BLUR_CLASS}
         />
       </div>
       <div className="flex w-full flex-row flex-nowrap gap-2 sm:w-auto sm:shrink-0 sm:justify-end">

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { DEMO_SENSITIVE_BLUR_CLASS } from "@/lib/demo-redaction";
 import type { ExternalNavLinkPublic } from "@/lib/external-nav-links-shared";
 import { WEEKLY_AGENDA_PATH } from "@/lib/routes";
 import { cn } from "@/lib/utils";
@@ -69,7 +70,7 @@ export function SiteHeaderNav({
           rel="noopener noreferrer"
           className={navItemClass(false)}
         >
-          {item.label}
+          <span className={DEMO_SENSITIVE_BLUR_CLASS}>{item.label}</span>
         </a>
       ))}
       <Link

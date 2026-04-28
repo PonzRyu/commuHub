@@ -43,6 +43,7 @@ import {
   uploadMemberIcs,
 } from "./actions";
 import type { DepartmentOption } from "./create-member-form";
+import { DEMO_SENSITIVE_BLUR_CLASS } from "@/lib/demo-redaction";
 
 const ICS_URL_DISPLAY_MAX = 20;
 const DEPARTMENT_UNSELECTED_VALUE = "選択してください";
@@ -224,8 +225,12 @@ export function MembersTable({
             ) : (
               rows.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell className="font-medium">{row.name}</TableCell>
-                  <TableCell>{row.departmentName}</TableCell>
+                  <TableCell className="font-medium">
+                    <span className={DEMO_SENSITIVE_BLUR_CLASS}>{row.name}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className={DEMO_SENSITIVE_BLUR_CLASS}>{row.departmentName}</span>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">
                     {row.displayOrder ?? "未選択"}
                   </TableCell>
@@ -299,6 +304,7 @@ export function MembersTable({
                 onChange={(e) => setEditName(e.target.value)}
                 maxLength={120}
                 disabled={pending}
+                className={DEMO_SENSITIVE_BLUR_CLASS}
               />
             </div>
             <div className="grid gap-2">
@@ -314,14 +320,18 @@ export function MembersTable({
               >
                 <SelectTrigger id="edit-member-dept" className="h-8 w-full px-2.5 text-sm">
                   <SelectValue placeholder="部署を選択">
-                    {selectedEditDepartmentName || DEPARTMENT_UNSELECTED_VALUE}
+                    {selectedEditDepartmentName ? (
+                      <span className={DEMO_SENSITIVE_BLUR_CLASS}>{selectedEditDepartmentName}</span>
+                    ) : (
+                      DEPARTMENT_UNSELECTED_VALUE
+                    )}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="max-h-[11rem]">
                 <SelectItem value={DEPARTMENT_UNSELECTED_VALUE}>選択してください</SelectItem>
                 {departments.map((d) => (
                     <SelectItem key={d.id} value={d.id}>
-                    {d.name}
+                    <span className={DEMO_SENSITIVE_BLUR_CLASS}>{d.name}</span>
                     </SelectItem>
                 ))}
                 </SelectContent>
@@ -463,7 +473,7 @@ export function MembersTable({
             <AlertDialogDescription>
               {active ? (
                 <>
-                  「<span className="font-medium">{active.name}</span>
+                  「<span className={DEMO_SENSITIVE_BLUR_CLASS}>{active.name}</span>
                   」を削除します。登録済みの ICS リンクも失われます。
                 </>
               ) : null}

@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DEMO_SENSITIVE_BLUR_CLASS } from "@/lib/demo-redaction";
 import { cn } from "@/lib/utils";
 import type { DepartmentFilterOption } from "./weekly-schedule";
 
@@ -71,14 +72,18 @@ export function DepartmentFilter({
           )}
         >
           <SelectValue placeholder="すべての部署">
-            {selectedDepartmentName || ALL_DEPARTMENT_VALUE}
+            {selectedDepartmentName ? (
+              <span className={DEMO_SENSITIVE_BLUR_CLASS}>{selectedDepartmentName}</span>
+            ) : (
+              ALL_DEPARTMENT_VALUE
+            )}
           </SelectValue>
         </SelectTrigger>
         <SelectContent className="max-h-[11rem]">
           <SelectItem value={ALL_DEPARTMENT_VALUE}>すべての部署</SelectItem>
           {departments.map((d) => (
             <SelectItem key={d.id} value={d.id}>
-              {d.name}
+              <span className={DEMO_SENSITIVE_BLUR_CLASS}>{d.name}</span>
             </SelectItem>
           ))}
         </SelectContent>

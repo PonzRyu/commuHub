@@ -5,6 +5,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { DEMO_SENSITIVE_BLUR_CLASS } from "@/lib/demo-redaction";
 import { cn } from "@/lib/utils";
 
 const TOKYO = "Asia/Tokyo";
@@ -148,7 +149,7 @@ export function ScheduleOccurrenceLine({
           >
             {timePrefix}
           </span>
-          <span className="min-w-0 flex-1 truncate">{summary}</span>
+          <span className={cn("min-w-0 flex-1 truncate", DEMO_SENSITIVE_BLUR_CLASS)}>{summary}</span>
         </button>
       </TooltipTrigger>
       <TooltipContent
@@ -157,7 +158,7 @@ export function ScheduleOccurrenceLine({
         sideOffset={8}
         className="max-w-sm space-y-2 text-left whitespace-normal"
       >
-        <p className="font-semibold">{summary}</p>
+        <p className={cn("font-semibold", DEMO_SENSITIVE_BLUR_CLASS)}>{summary}</p>
         <p className="text-muted-foreground text-xs leading-relaxed">
           {timeDetail}
         </p>

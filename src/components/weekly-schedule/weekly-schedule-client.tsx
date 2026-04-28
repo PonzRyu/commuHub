@@ -39,6 +39,7 @@ import { DepartmentFilter } from "@/components/weekly-schedule/department-filter
 import { WeekNavLinks } from "@/components/week-nav-links";
 import { PageContainer } from "@/components/page-container";
 import { PageStack } from "@/components/page-stack";
+import { DEMO_SENSITIVE_BLUR_CLASS } from "@/lib/demo-redaction";
 import {
   getBaseScheduleColorIndex,
   SCHEDULE_PALETTE_COUNT,
@@ -152,8 +153,8 @@ function StaticMemberRow({
         )}
       >
         <div className="flex flex-col gap-0.5">
-          <span>{row.name}</span>
-          <span className="text-muted-foreground text-xs font-normal">
+          <span className={DEMO_SENSITIVE_BLUR_CLASS}>{row.name}</span>
+          <span className={cn("text-muted-foreground text-xs font-normal", DEMO_SENSITIVE_BLUR_CLASS)}>
             {row.departmentName}
           </span>
         </div>
@@ -193,8 +194,8 @@ function SortableMemberRow({
         {...listeners}
       >
         <div className="flex flex-col gap-0.5">
-          <span>{row.name}</span>
-          <span className="text-muted-foreground text-xs font-normal">
+          <span className={DEMO_SENSITIVE_BLUR_CLASS}>{row.name}</span>
+          <span className={cn("text-muted-foreground text-xs font-normal", DEMO_SENSITIVE_BLUR_CLASS)}>
             {row.departmentName}
           </span>
         </div>
@@ -451,7 +452,7 @@ export function WeeklyScheduleClient({
                           key={row.memberId}
                           row={row}
                           weekdayCount={weekdays.length}
-                          dragLabel={`${row.name}の表示順を変更`}
+                          dragLabel="表示順を変更"
                         />
                       ))
                     )}

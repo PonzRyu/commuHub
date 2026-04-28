@@ -66,6 +66,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DEMO_SENSITIVE_BLUR_CLASS } from "@/lib/demo-redaction";
 import { cn } from "@/lib/utils";
 
 const TIME_OPTION_STEP_MINUTES = 30;
@@ -592,7 +593,10 @@ export function WeeklyNoticeEditor({
               rows={6}
               disabled={unifiedBusy}
               placeholder="例：定例会の議題、締切、休暇の共有、来客の案内 など"
-              className="border-input bg-background w-full min-h-[6rem] resize-y rounded-lg border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className={cn(
+                "border-input bg-background w-full min-h-[6rem] resize-y rounded-lg border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                DEMO_SENSITIVE_BLUR_CLASS,
+              )}
             />
           </div>
         </section>
@@ -917,7 +921,7 @@ function ScheduleSortableRow({
       </TableCell>
       <TableCell className="align-top whitespace-normal">
         <Input
-          className="min-w-0 w-full"
+          className={cn("min-w-0 w-full", DEMO_SENSITIVE_BLUR_CLASS)}
           value={row.text}
           onChange={(e) => updateScheduleRow(dayIndex, row.id, { text: e.target.value })}
           placeholder="例: 定例MTG / 来客対応"
