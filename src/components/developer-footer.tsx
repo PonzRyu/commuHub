@@ -30,7 +30,7 @@ export function DeveloperFooter() {
             aria-label="リンク"
           >
             <a
-              href="https://github.com/PonzRyu/commuHub"
+              href="https://github.com/PonzRyu"
               target="_blank"
               rel="noopener noreferrer"
               className="underline-offset-4 transition-colors hover:text-foreground hover:underline"
@@ -41,7 +41,7 @@ export function DeveloperFooter() {
               href="mailto:ryu.ponz.dev.0112@gmail.com"
               className="underline-offset-4 transition-colors hover:text-foreground hover:underline"
             >
-              お問い合わせ
+              Contact
             </a>
           </nav>
         </div>
