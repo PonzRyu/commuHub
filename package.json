@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "next dev --webpack",
+    "dev:demo": "node scripts/dev-demo.mjs",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
